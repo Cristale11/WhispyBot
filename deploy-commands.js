@@ -7,7 +7,7 @@ const commands = [
     .setDescription('Send an anonymous message.')
     .addStringOption(option =>
       option
-        .setName('mensaje')
+        .setName('message')
         .setDescription('The message you want to send anonymously.')
         .setRequired(true)
     )
