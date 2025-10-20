@@ -4,11 +4,11 @@ const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 const commands = [
   new SlashCommandBuilder()
     .setName('annonmsg')
-    .setDescription('Envía un mensaje anónimo.')
+    .setDescription('Send an anonymous message.')
     .addStringOption(option =>
       option
         .setName('mensaje')
-        .setDescription('El mensaje que quieres enviar de forma anónima.')
+        .setDescription('The message you want to send anonymously.')
         .setRequired(true)
     )
     .toJSON(),

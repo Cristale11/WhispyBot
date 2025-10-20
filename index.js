@@ -12,8 +12,8 @@ client.once(Events.ClientReady, c => {
   console.log(`Bot conectado como ${c.user.tag}`);
 
   client.user.setPresence({
-    activities: [{ name: '/annonmsg', type: 0 }], // type 0 = Playing
-    status: 'online' // también puede ser 'idle', 'dnd' o 'invisible'
+    activities: [{ name: '/annonmsg', type: 3 }],
+    status: 'online'
   });
 });
 
@@ -25,14 +25,14 @@ client.on(Events.InteractionCreate, async interaction => {
 
     const embed = new EmbedBuilder()
       .setColor(0x000000)
-      .setTitle('Mensaje anonimo:')
+      .setTitle('Anonymous message:')
       .setDescription(`\n${mensaje}`)
 
     await interaction.channel.send({ embeds: [embed] });
 
     // Confirmar al usuario
     await interaction.reply({
-      content: 'Tu mensaje se envió de forma anónima.',
+      content: 'Your message was sent anonymously.',
       ephemeral: true
     });
   }
