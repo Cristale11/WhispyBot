@@ -3,7 +3,7 @@ const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('anonmsg')
+    .setName('annonmsg')
     .setDescription('Envía un mensaje anónimo.')
     .addStringOption(option =>
       option
@@ -20,7 +20,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
   try {
     console.log('Registrando comando global /anonmsg');
     await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+      Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands },
     );
     console.log('Comando global registrado correctamente.');

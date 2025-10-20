@@ -15,7 +15,7 @@ client.once(Events.ClientReady, c => {
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === 'anonmsg') {
+  if (interaction.commandName === 'annonmsg') {
     const mensaje = interaction.options.getString('mensaje');
 
     const embed = new EmbedBuilder()
