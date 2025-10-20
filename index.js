@@ -21,12 +21,12 @@ client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === 'annonmsg') {
-    const mensaje = interaction.options.getString('mensaje');
+    const message = interaction.options.getString('message');
 
     const embed = new EmbedBuilder()
       .setColor(0x000000)
       .setTitle('Anonymous message:')
-      .setDescription(`\n${mensaje}`)
+      .setDescription(`\n${message}`)
 
     await interaction.channel.send({ embeds: [embed] });
 
