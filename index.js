@@ -283,73 +283,73 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
       }
     }
-  }
-  if (interaction.customId.startsWith("reply_modal_dm_")) {
-    const parts = interaction.customId.replace("reply_modal_dm_", "").split("_");
-    const originalAuthorId = parts[0];
-    const messageId = parts[1];
-    const userId = interaction.user.id;
-    const replyMessage = interaction.fields.getTextInputValue("reply_message");
-    const messageData = anonymousMessages.get(messageId);
 
-    try {
-      const originalAuthor = await client.users.fetch(originalAuthorId);
+    if (interaction.customId.startsWith("reply_modal_dm_")) {
+      const parts = interaction.customId.replace("reply_modal_dm_", "").split("_");
+      const originalAuthorId = parts[0];
+      const messageId = parts[1];
+      const userId = interaction.user.id;
+      const replyMessage = interaction.fields.getTextInputValue("reply_message");
+      const messageData = anonymousMessages.get(messageId);
 
-      const embed = new EmbedBuilder()
-        .setColor(0x5865f2)
-        .setTitle("Anonymous reply to your message")
-        .addFields({
-          name: "Your original message:",
-          value: messageData?.originalMessage || "Message not found",
-          inline: false,
-        })
-        .addFields({
-          name: "Anonymous reply:",
-          value: replyMessage,
-          inline: false,
-        })
-        .setFooter({
-          text: "Someone replied anonymously to your message in a server",
-        })
-        .setTimestamp();
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("reply_anonymous")
-          .setLabel("Reply")
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji("💬")
-      );
+      try {
+        const originalAuthor = await client.users.fetch(originalAuthorId);
 
-      const sentReply = await originalAuthor.send({
-        embeds: [embed],
-        components: [row] // ✅ NUEVO
-      });
+        const embed = new EmbedBuilder()
+          .setColor(0x5865f2)
+          .setTitle("Anonymous reply to your message")
+          .addFields({
+            name: "Your original message:",
+            value: messageData?.originalMessage || "Message not found",
+            inline: false,
+          })
+          .addFields({
+            name: "Anonymous reply:",
+            value: replyMessage,
+            inline: false,
+          })
+          .setFooter({
+            text: "Someone replied anonymously to your message in a server",
+          })
+          .setTimestamp();
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("reply_anonymous_dm")
+            .setLabel("Reply")
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji("💬")
+        );
 
-      anonymousMessages.set(sentReply.id, {
-        authorId: userId,
-        originalMessage: replyMessage,
-      });
+        const sentReply = await originalAuthor.send({
+          embeds: [embed],
+          components: [row] // ✅ NUEVO
+        });
 
-      const replyKey = `${messageId}_${userId}`;
-      userReplies.set(replyKey, true);
+        anonymousMessages.set(sentReply.id, {
+          authorId: userId,
+          originalMessage: replyMessage,
+        });
 
-      console.log(
-        `[REPLY] ${interaction.user.tag} (${interaction.user.id}) -> ${originalAuthor.tag} (${originalAuthor.id}): ${replyMessage}`
-      );
+        const replyKey = `${messageId}_${userId}`;
+        userReplies.set(replyKey, true);
 
-      await interaction.reply({
-        content: "Your anonymous reply was sent successfully!",
-        flags: MessageFlags.Ephemeral,
-      });
-    } catch (error) {
-      console.error("Error sending reply:", error);
+        console.log(
+          `[REPLY] ${interaction.user.tag} (${interaction.user.id}) -> ${originalAuthor.tag} (${originalAuthor.id}): ${replyMessage}`
+        );
 
-      await interaction.reply({
-        content: "Could not send the reply. The user may have DMs disabled.",
-        flags: MessageFlags.Ephemeral,
-      });
+        await interaction.reply({
+          content: "Your anonymous reply was sent successfully!",
+          flags: MessageFlags.Ephemeral,
+        });
+      } catch (error) {
+        console.error("Error sending reply:", error);
+
+        await interaction.reply({
+          content: "Could not send the reply. The user may have DMs disabled.",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
     }
-
   }
 });
 
