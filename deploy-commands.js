@@ -5,6 +5,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName('annonmsg')
     .setDescription('Send an anonymous message.')
+    .setContexts([0])
     .addStringOption(option =>
       option
         .setName('message')
