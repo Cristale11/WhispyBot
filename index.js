@@ -39,7 +39,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const embed = new EmbedBuilder()
       .setColor(0x000000)
       .setTitle("Anonymous message:")
-      .setDescription(`\n${message}`);
+      .setDescription(`\n${message}`)
+      .setFooter({ text: "Someone sent an anonymous message" })
+      .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -54,8 +56,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
       components: [row],
     });
 
-    anonymousMessages.set(sentMessage.id, interaction.user.id);
-
+    anonymousMessages.set(sentMessage.id, {
+      authorId: interaction.user.id,
+      originalMessage: message,
+    });
     await interaction.reply({
       content: "Your message was sent anonymously.",
       flags: MessageFlags.Ephemeral,
@@ -114,9 +118,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isButton()) {
     if (interaction.customId === "reply_anonymous") {
       const messageId = interaction.message.id;
-      const originalAuthorId = anonymousMessages.get(messageId);
+      const messageData = anonymousMessages.get(messageId);
 
-      if (!originalAuthorId) {
+      if (!messageData) {
         return interaction.reply({
           content: "Could not find the original author of this message.",
           flags: MessageFlags.Ephemeral,
@@ -125,7 +129,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       // Crear modal para la respuesta
       const modal = new ModalBuilder()
-        .setCustomId(`reply_modal_${originalAuthorId}`)
+        .setCustomId(`reply_modal_${messageData.authorId}_${messageId}`)
         .setTitle("Reply Anonymously (Beta)");
 
       const replyInput = new TextInputBuilder()
@@ -146,22 +150,33 @@ client.on(Events.InteractionCreate, async (interaction) => {
   // Manejo de modales
   if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith("reply_modal_")) {
-      const originalAuthorId = interaction.customId.replace("reply_modal_", "");
+      const parts = interaction.customId.replace("reply_modal_", "").split("_"); // ✅ CORREGIDO
+      const originalAuthorId = parts[0]; // ✅ CORREGIDO
+      const messageId = parts[1]; // ✅ CORREGIDO
       const replyMessage =
         interaction.fields.getTextInputValue("reply_message");
+      const messageData = anonymousMessages.get(messageId);
 
       try {
         const originalAuthor = await client.users.fetch(originalAuthorId);
 
         const embed = new EmbedBuilder()
           .setColor(0x5865f2)
-          .setTitle("Anonymous Reply to Your Message")
-          .setDescription(replyMessage)
+          .setTitle("Anonymous reply to your message")
+          .addFields({
+            name: "Your original message:",
+            value: messageData?.originalMessage || "Message not found",
+            inline: false,
+          })
+          .addFields({
+            name: "Anonymous reply:",
+            value: replyMessage,
+            inline: false,
+          })
           .setFooter({
             text: "Someone replied anonymously to your message in a server",
           })
           .setTimestamp();
-
         await originalAuthor.send({ embeds: [embed] });
 
         console.log(
