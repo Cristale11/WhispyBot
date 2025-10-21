@@ -39,14 +39,14 @@ client.on(Events.InteractionCreate, async interaction => {
     });
   }
 
-    if (interaction.commandName === 'annonmd') {
+    if (interaction.commandName === 'annondm') {
     const targetUser = interaction.options.getUser('user');
     const message = interaction.options.getString('message');
 
     // Verificar que no se envíe mensaje a sí mismo
     if (targetUser.id === interaction.user.id) {
       return interaction.reply({
-        content: '❌ You cannot send anonymous messages to yourself.',
+        content: 'You cannot send anonymous messages to yourself.',
         ephemeral: true
       });
     }
@@ -54,7 +54,7 @@ client.on(Events.InteractionCreate, async interaction => {
     // Verificar que no sea un bot
     if (targetUser.bot) {
       return interaction.reply({
-        content: '❌ You cannot send anonymous messages to bots.',
+        content: 'You cannot send anonymous messages to bots.',
         ephemeral: true
       });
     }
@@ -62,7 +62,7 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
       const embed = new EmbedBuilder()
         .setColor(0x000000)
-        .setTitle('Anonymous Direct Message')
+        .setTitle('Anonymous Direct Message:')
         .setDescription(message)
         .setFooter({ text: 'Someone sent you an anonymous message' })
         .setTimestamp();
@@ -70,7 +70,7 @@ client.on(Events.InteractionCreate, async interaction => {
       await targetUser.send({ embeds: [embed] });
 
       // Log del mensaje (opcional, para moderación)
-      console.log(`[ANONMD] ${interaction.user.tag} (${interaction.user.id}) -> ${targetUser.tag} (${targetUser.id}): ${message}`);
+      console.log(`[ANONDM] ${interaction.user.tag} (${interaction.user.id}) -> ${targetUser.tag} (${targetUser.id}): ${message}`);
 
       await interaction.reply({
         content: `Your anonymous message was sent to ${targetUser.tag}.`,
@@ -81,7 +81,7 @@ client.on(Events.InteractionCreate, async interaction => {
       console.error('Error sending DM:', error);
       
       await interaction.reply({
-        content: '❌ Could not send the message. The user may have DMs disabled or doesn\'t share a server with the bot.',
+        content: 'Could not send the message. The user may have DMs disabled or doesn\'t share a server with the bot.',
         ephemeral: true
       });
     }

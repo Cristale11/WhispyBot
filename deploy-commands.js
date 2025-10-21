@@ -15,7 +15,7 @@ const commands = [
 
 
   new SlashCommandBuilder()
-    .setName('annonmd')
+    .setName('annondm')
     .setDescription('Send an anonymous direct message to a user.')
     .addUserOption(option =>
       option
