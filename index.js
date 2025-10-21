@@ -10,6 +10,7 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  MessageFlags,
 } = require("discord.js");
 
 const client = new Client({
@@ -57,7 +58,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: "Your message was sent anonymously.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -69,7 +70,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (targetUser.id === interaction.user.id) {
       return interaction.reply({
         content: "You cannot send anonymous messages to yourself.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
 
@@ -77,7 +78,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (targetUser.bot) {
       return interaction.reply({
         content: "You cannot send anonymous messages to bots.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
 
@@ -98,7 +99,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       await interaction.reply({
         content: `Your anonymous message was sent to ${targetUser.tag}.`,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     } catch (error) {
       console.error("Error sending DM:", error);
@@ -106,7 +107,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await interaction.reply({
         content:
           "Could not send the message. The user may have DMs disabled or doesn't share a server with the bot.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
   }
@@ -117,15 +118,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (!originalAuthorId) {
         return interaction.reply({
-          content: "❌ Could not find the original author of this message.",
-          ephemeral: true,
+          content: "Could not find the original author of this message.",
+          flags: MessageFlags.Ephemeral,
         });
       }
 
       // Crear modal para la respuesta
       const modal = new ModalBuilder()
         .setCustomId(`reply_modal_${originalAuthorId}`)
-        .setTitle("Reply Anonymously:");
+        .setTitle("Reply Anonymously (Beta)");
 
       const replyInput = new TextInputBuilder()
         .setCustomId("reply_message")
@@ -146,7 +147,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith("reply_modal_")) {
       const originalAuthorId = interaction.customId.replace("reply_modal_", "");
-      const replyMessage = interaction.fields.getFieldValue("reply_message");
+      const replyMessage =
+        interaction.fields.getTextInputValue("reply_message");
 
       try {
         const originalAuthor = await client.users.fetch(originalAuthorId);
@@ -168,14 +170,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         await interaction.reply({
           content: "Your anonymous reply was sent successfully!",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       } catch (error) {
         console.error("Error sending reply:", error);
 
         await interaction.reply({
           content: "Could not send the reply. The user may have DMs disabled.",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }
