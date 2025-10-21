@@ -14,7 +14,7 @@ client.once(Events.ClientReady, c => {
   console.log(`Bot conectado como ${c.user.tag}`);
 
   client.user.setPresence({
-    activities: [{ name: '/annonmsg', type: 3 }],
+    activities: [{ name: '/annonmsg · /annondm @user', type: 3 }],
     status: 'online'
   });
 });
