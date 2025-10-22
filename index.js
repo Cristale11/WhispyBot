@@ -78,7 +78,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       try {
-        const embed = createAnonymousDMEmbed(message);
+    const embed = createAnonymousDMEmbed(message, interaction.user.id);
 
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
