@@ -5,6 +5,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
+  EmbedBuilder,
 } = require("discord.js");
 const client = require("./config/client");
 const { saveAnonymousMessage } = require("./utils/message-storage");
