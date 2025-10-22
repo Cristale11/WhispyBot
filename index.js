@@ -11,7 +11,7 @@ const { saveAnonymousMessage } = require("./utils/message-storage");
 const {
   createAnonymousMessageEmbed,
   createAnonymousDMEmbed,
-} = require("./utils/embedBuilder");
+} = require("./utils/embed-builder");
 const { handleButtonInteraction } = require("./handlers/button-handler");
 const { handleModalInteraction } = require("./handlers/modal-handler");
 
