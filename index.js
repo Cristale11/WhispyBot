@@ -79,14 +79,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       try {
-        const {
-          registerMessageToConversation,
-        } = require("./utils/user-colors");
-
         // Crear un ID de conversación único
         const conversationId = `${Date.now()}-${Math.floor(
           Math.random() * 10000
         )}`;
+        
+        const {
+          registerMessageToConversation,
+        } = require("./utils/user-colors");
 
         // Crear el embed final con ese ID
         const finalEmbed = createAnonymousDMEmbed(message, conversationId);
