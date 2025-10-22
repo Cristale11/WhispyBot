@@ -79,9 +79,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       try {
-        const tempEmbed = new EmbedBuilder().setDescription(
-          "Sending anonymous message..."
-        );
+        const conversationId =
+          Date.now().toString() + Math.random().toString(36).substring(2);
+
+        // Ahora usar el ID del mensaje como conversationId y actualizar el color
+        const {
+          registerMessageToConversation,
+        } = require("./utils/user-colors");
+        const embed = createAnonymousDMEmbed(message, conversationId);
 
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
@@ -91,24 +96,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
             .setEmoji("💬")
         );
 
-        const sentDM = await targetUser.send({
-          embeds: [tempEmbed],
-          components: [row],
-        });
-
-        // Ahora usar el ID del mensaje como conversationId y actualizar el color
-        const {
-          registerMessageToConversation,
-        } = require("./utils/user-colors");
-        const finalEmbed = createAnonymousDMEmbed(message, sentDM.id);
-
         // Actualizar el mensaje con el color correcto
-        await sentDM.edit({
-          embeds: [finalEmbed],
+        const sentDM = await targetUser.send({
+          embeds: [embed],
           components: [row],
         });
 
-        registerMessageToConversation(sentDM.id, sentDM.id);
+        registerMessageToConversation(sentDM.id, conversationId);
         saveAnonymousMessage(sentDM.id, interaction.user.id, message);
 
         // Log del mensaje (opcional, para moderación)
