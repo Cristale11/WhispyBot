@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require("discord.js");
-const { getColorForUser } = require("./user-colors");
+const { getColorForConversation } = require("./user-colors"); // ← CAMBIAR ESTO
 
 /**
  * Crea un embed para mensaje anónimo en canal
