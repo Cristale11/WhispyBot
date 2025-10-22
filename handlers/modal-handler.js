@@ -54,6 +54,7 @@ async function handleReplyModal(interaction, isDM) {
     const embed = createReplyEmbed(
       messageData?.originalMessage,
       replyMessage,
+      userId,
       isDM
     );
 
