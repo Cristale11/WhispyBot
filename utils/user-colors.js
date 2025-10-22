@@ -75,12 +75,6 @@ function getColorForConversation(conversationId) {
  */
 function registerMessageToConversation(messageId, conversationId) {
   messageToConversation.set(messageId, conversationId);
-
-  // Si la conversación no tiene color aún, asígnalo ya
-  if (!conversationColors.has(conversationId)) {
-    const color = getColorForConversation(conversationId);
-    console.log(`[COLOR] Color inicial asignado a ${conversationId}: ${colorToHex(color)}`);
-  }
 }
 
 /**
