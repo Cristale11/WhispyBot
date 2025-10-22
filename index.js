@@ -84,8 +84,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
           Math.random() * 10000
         )}`;
 
-registerMessageToConversation(conversationId, conversationId); // esto ahora fija el color
-
+        const {
+          registerMessageToConversation,
+        } = require("./utils/user-colors");
 
         // Crear el embed final con ese ID
         const finalEmbed = createAnonymousDMEmbed(message, conversationId);
@@ -105,7 +106,7 @@ registerMessageToConversation(conversationId, conversationId); // esto ahora fij
         });
 
         // Registrar la conversación
-registerMessageToConversation(sentDM.id, conversationId);
+        registerMessageToConversation(conversationId, conversationId); // esto ahora fija el color
         saveAnonymousMessage(sentDM.id, interaction.user.id, message);
 
         // Log del mensaje (opcional, para moderación)
