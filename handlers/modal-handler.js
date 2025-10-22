@@ -8,8 +8,8 @@ const {
   getAnonymousMessage,
   saveAnonymousMessage,
   markUserReplied,
-} = require("../utils/messageStorage");
-const { createReplyEmbed } = require("../utils/embedBuilder");
+} = require("../utils/message-storage");
+const { createReplyEmbed } = require("../utils/embed-builder");
 const client = require("../config/client");
 
 /**
