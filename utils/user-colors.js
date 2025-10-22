@@ -1,4 +1,4 @@
-// Sistema de asignación de colores únicos por usuario y conversación
+// Sistema de asignación de colores únicos por conversación
 
 // Paleta de colores vibrantes y distinguibles
 const COLOR_PALETTE = [
@@ -24,51 +24,35 @@ const COLOR_PALETTE = [
   0xff6f00, // Naranja intenso
 ];
 
-// Mapa para almacenar el color asignado a cada usuario en cada conversación
-// Estructura: Map<conversationKey, color>
-// conversationKey = "conversationId_userId_targetUserId"
+// Mapa para almacenar el color asignado a cada conversación
+// Estructura: Map<conversationId, color>
 const conversationColors = new Map();
 
-/**
- * Genera una clave única para una conversación entre dos usuarios
- * @param {string} userId1 - ID del primer usuario
- * @param {string} userId2 - ID del segundo usuario
- * @returns {string} - Clave única de la conversación
- */
-function getConversationKey(userId1, userId2) {
-  // Ordenar IDs alfabéticamente para que A->B y B->A tengan la misma clave
-  const ids = [userId1, userId2].sort();
-  return `${ids[0]}_${ids[1]}`;
-}
+// Mapa para rastrear qué conversación pertenece a cada mensaje
+// Estructura: Map<messageId, conversationId>
+const messageToConversation = new Map();
 
 /**
- * Genera un color único basado en el ID del usuario y su conversación
- * Cada conversación nueva tendrá un color diferente para el mismo usuario
- * @param {string} userId - ID del usuario que envía el mensaje
- * @param {string} targetUserId - ID del usuario que recibe el mensaje
+ * Genera un color único basado en el ID de la conversación
+ * @param {string} conversationId - ID único de la conversación (primer mensaje)
  * @returns {number} - Color en formato hexadecimal
  */
-function getColorForConversation(userId, targetUserId) {
-  // Validar que ambos IDs existen
-  if (!userId || typeof userId !== 'string' || !targetUserId || typeof targetUserId !== 'string') {
-    console.error('getColorForConversation: IDs inválidos:', { userId, targetUserId });
+function getColorForConversation(conversationId) {
+  // Validar que conversationId existe
+  if (!conversationId || typeof conversationId !== 'string') {
+    console.error('getColorForConversation: conversationId inválido:', conversationId);
     return COLOR_PALETTE[0]; // Devolver primer color por defecto
   }
 
-  const conversationKey = getConversationKey(userId, targetUserId);
-  const userInConversationKey = `${conversationKey}_${userId}`;
-
-  // Si ya tiene un color asignado en esta conversación, devolverlo
-  if (conversationColors.has(userInConversationKey)) {
-    return conversationColors.get(userInConversationKey);
+  // Si ya tiene un color asignado, devolverlo
+  if (conversationColors.has(conversationId)) {
+    return conversationColors.get(conversationId);
   }
 
-  // Generar un hash combinando userId y conversationKey
+  // Generar un hash del conversationId
   let hash = 0;
-  const combinedString = userInConversationKey;
-  
-  for (let i = 0; i < combinedString.length; i++) {
-    hash = (hash << 5) - hash + combinedString.charCodeAt(i);
+  for (let i = 0; i < conversationId.length; i++) {
+    hash = (hash << 5) - hash + conversationId.charCodeAt(i);
     hash = hash & hash; // Convert to 32bit integer
   }
 
@@ -77,34 +61,29 @@ function getColorForConversation(userId, targetUserId) {
   const color = COLOR_PALETTE[colorIndex];
 
   // Guardar el color asignado para esta conversación
-  conversationColors.set(userInConversationKey, color);
+  conversationColors.set(conversationId, color);
 
-  console.log(`[COLOR] Usuario ${userId} en conversación con ${targetUserId}: ${colorToHex(color)}`);
+  console.log(`[COLOR] Nueva conversación ${conversationId}: ${colorToHex(color)}`);
 
   return color;
 }
 
 /**
- * Función legacy para mantener compatibilidad con respuestas
- * Usa color basado solo en userId (para respuestas sin contexto)
- * @param {string} userId - ID del usuario
- * @returns {number} - Color en formato hexadecimal
+ * Registra qué conversación pertenece a un mensaje
+ * @param {string} messageId - ID del mensaje
+ * @param {string} conversationId - ID de la conversación
  */
-function getColorForUser(userId) {
-  if (!userId || typeof userId !== 'string') {
-    console.error('getColorForUser: userId inválido:', userId);
-    return COLOR_PALETTE[0];
-  }
+function registerMessageToConversation(messageId, conversationId) {
+  messageToConversation.set(messageId, conversationId);
+}
 
-  // Para respuestas, usar un hash simple del userId
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = (hash << 5) - hash + userId.charCodeAt(i);
-    hash = hash & hash;
-  }
-
-  const colorIndex = Math.abs(hash) % COLOR_PALETTE.length;
-  return COLOR_PALETTE[colorIndex];
+/**
+ * Obtiene el ID de conversación de un mensaje
+ * @param {string} messageId - ID del mensaje
+ * @returns {string|null} - ID de la conversación o null si no existe
+ */
+function getConversationFromMessage(messageId) {
+  return messageToConversation.get(messageId) || null;
 }
 
 /**
@@ -125,6 +104,7 @@ function getColorStats() {
     totalConversations: conversationColors.size,
     colorsInUse: new Set(conversationColors.values()).size,
     availableColors: COLOR_PALETTE.length,
+    trackedMessages: messageToConversation.size,
   };
 }
 
@@ -133,11 +113,13 @@ function getColorStats() {
  */
 function clearColorCache() {
   conversationColors.clear();
+  messageToConversation.clear();
 }
 
 module.exports = {
-  getColorForUser,
   getColorForConversation,
+  registerMessageToConversation,
+  getConversationFromMessage,
   colorToHex,
   getColorStats,
   clearColorCache,

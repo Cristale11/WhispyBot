@@ -49,13 +49,14 @@ async function handleReplyModal(interaction, isDM) {
 
   try {
     const originalAuthor = await client.users.fetch(originalAuthorId);
+    const { getConversationFromMessage } = require("../utils/user-colors");
+    const conversationId = getConversationFromMessage(messageId) || messageId;
 
     // Crear embed de respuesta
     const embed = createReplyEmbed(
       messageData?.originalMessage,
       replyMessage,
-      userId,
-      originalAuthorId,
+      conversationId,
       isDM
     );
 
@@ -74,6 +75,9 @@ async function handleReplyModal(interaction, isDM) {
       components: [row],
     });
 
+    const { registerMessageToConversation } = require("../utils/user-colors");
+    registerMessageToConversation(sentReply.id, conversationId);
+    
     // Guardar la respuesta para permitir nuevas replies
     saveAnonymousMessage(sentReply.id, userId, replyMessage);
 

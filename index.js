@@ -78,7 +78,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       try {
-    const embed = createAnonymousDMEmbed(message, interaction.user.id, targetUser.id);
+        const embed = createAnonymousDMEmbed(
+          message,
+          interaction.user.id,
+          targetUser.id
+        );
 
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
@@ -89,10 +93,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
         );
 
         const sentDM = await targetUser.send({
-          embeds: [embed],
+          embeds: [tempEmbed],
           components: [row],
         });
 
+        // Ahora usar el ID del mensaje como conversationId y actualizar el color
+        const {
+          registerMessageToConversation,
+        } = require("./utils/user-colors");
+        const finalEmbed = createAnonymousDMEmbed(message, sentDM.id);
+
+        // Actualizar el mensaje con el color correcto
+        await sentDM.edit({
+          embeds: [finalEmbed],
+          components: [row],
+        });
+
+        registerMessageToConversation(sentDM.id, sentDM.id);
         saveAnonymousMessage(sentDM.id, interaction.user.id, message);
 
         // Log del mensaje (opcional, para moderación)

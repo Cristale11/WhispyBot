@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require("discord.js");
-const { getColorForConversation } = require("./user-colors"); // ← CAMBIAR ESTO
+const { getColorForConversation } = require("./user-colors");
 
 /**
  * Crea un embed para mensaje anónimo en canal
@@ -21,8 +21,8 @@ function createAnonymousMessageEmbed(message) {
  * @param {string} userId - ID del usuario (para asignar color)
  * @returns {EmbedBuilder}
  */
-function createAnonymousDMEmbed(message, userId, targetUserId) {
-    const color = getColorForConversation(userId, targetUserId);
+function createAnonymousDMEmbed(message, conversationId) {
+  const color = getColorForConversation(conversationId);
 
   return new EmbedBuilder()
     .setColor(color)
@@ -40,8 +40,8 @@ function createAnonymousDMEmbed(message, userId, targetUserId) {
  * @param {boolean} isDM - Si es respuesta a DM
  * @returns {EmbedBuilder}
  */
-function createReplyEmbed(originalMessage, replyMessage, userId, targetUserId, isDM = false) {
-  const color = getColorForConversation(userId, targetUserId);
+function createReplyEmbed(originalMessage, replyMessage, conversationId, isDM = false) {
+  const color = getColorForConversation(conversationId);
   const footerText = isDM
     ? "Someone replied anonymously to your message"
     : "Someone replied anonymously to your message in a server";
