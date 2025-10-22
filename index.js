@@ -79,7 +79,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       try {
-        const tempEmbed = new EmbedBuilder()
+const tempEmbed = new EmbedBuilder()
+  .setDescription("Sending anonymous message..."); // temporary text
 
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
