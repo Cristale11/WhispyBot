@@ -55,6 +55,7 @@ async function handleReplyModal(interaction, isDM) {
       messageData?.originalMessage,
       replyMessage,
       userId,
+      originalAuthorId,
       isDM
     );
 

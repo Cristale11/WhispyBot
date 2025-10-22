@@ -21,8 +21,8 @@ function createAnonymousMessageEmbed(message) {
  * @param {string} userId - ID del usuario (para asignar color)
  * @returns {EmbedBuilder}
  */
-function createAnonymousDMEmbed(message, userId) {
-    const color = getColorForUser(userId);
+function createAnonymousDMEmbed(message, userId, targetUserId) {
+    const color = getColorForUser(userId, targetUserId);
 
   return new EmbedBuilder()
     .setColor(color)
@@ -40,8 +40,8 @@ function createAnonymousDMEmbed(message, userId) {
  * @param {boolean} isDM - Si es respuesta a DM
  * @returns {EmbedBuilder}
  */
-function createReplyEmbed(originalMessage, replyMessage, userId, isDM = false) {
-  const color = getColorForUser(userId);
+function createReplyEmbed(originalMessage, replyMessage, userId, targetUserId, isDM = false) {
+  const color = getColorForUser(userId, targetUserId);
   const footerText = isDM
     ? "Someone replied anonymously to your message"
     : "Someone replied anonymously to your message in a server";
