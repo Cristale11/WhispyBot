@@ -60,27 +60,21 @@ async function handleReplyModal(interaction, isDM) {
       isDM
     );
 
-    const buttons = [
+
+
+    // Crear botón de respuesta
+    const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(isDM ? "reply_anonymous_dm" : "reply_anonymous")
         .setLabel("Reply")
         .setStyle(ButtonStyle.Primary)
-        .setEmoji("💬")
-    ];
-
-    // Solo agregar botón Delete para respuestas en DM
-    if (isDM) {
-      buttons.push(
-        new ButtonBuilder()
-          .setCustomId("delete_anonymous_dm")
-          .setLabel("Delete")
-          .setStyle(ButtonStyle.Danger)
-          .setEmoji("🗑️")
-      );
-    }
-
-    // Crear botón de respuesta
-    const row = new ActionRowBuilder().addComponents(...buttons);
+        .setEmoji("💬"),
+      new ButtonBuilder()
+        .setCustomId("delete_anonymous_dm")
+        .setLabel("Delete")
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji("🗑️")
+    );
 
     // Enviar respuesta
     const sentReply = await originalAuthor.send({
