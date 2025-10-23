@@ -8,7 +8,7 @@ const {
 const {
   getAnonymousMessage,
   hasUserReplied,
-} = require("../utils/message-storage");
+} = require("../utils/messageStorage");
 
 /**
  * Maneja las interacciones de botones
@@ -26,11 +26,13 @@ async function handleButtonInteraction(interaction) {
   if (interaction.customId === "reply_anonymous_dm") {
     await handleReplyButton(interaction, true);
   }
+
   // Manejo de botón "delete_anonymous_dm" (eliminar DM)
   if (interaction.customId === "delete_anonymous_dm") {
     await handleDeleteButton(interaction);
   }
 
+  // Manejo de botones de navegación (Prev/Next)
   if (interaction.customId.startsWith("nav_prev_") || interaction.customId.startsWith("nav_next_")) {
     await handleNavigationButton(interaction);
   }
@@ -44,7 +46,40 @@ async function handleButtonInteraction(interaction) {
 async function handleReplyButton(interaction, isDM) {
   const messageId = interaction.message.id;
   const userId = interaction.user.id;
-  const messageData = getAnonymousMessage(messageId);
+  
+  // Primero intentar obtener de message-storage (mensajes recientes)
+  let messageData = getAnonymousMessage(messageId);
+  
+  // Si no está en message-storage, obtener del historial de conversación
+  if (!messageData) {
+    const { getConversationFromMessage } = require("../utils/user-colors");
+    const { getConversationHistory } = require("../utils/conversation-history");
+    
+    const conversationId = getConversationFromMessage(messageId);
+    
+    if (conversationId) {
+      const history = getConversationHistory(conversationId);
+      
+      if (history && history.messages.length > 0) {
+        // Obtener el authorId del primer mensaje (quien inició la conversación)
+        const firstMessage = history.messages[0];
+        
+        // Determinar quién es el autor original (el otro participante)
+        // Si el usuario actual es el targetId, entonces el authorId es quien envió
+        // Si el usuario actual es el authorId, entonces responde al targetId
+        const authorId = firstMessage.targetId === userId 
+          ? firstMessage.authorId 
+          : firstMessage.targetId;
+        
+        messageData = {
+          authorId: authorId,
+          originalMessage: "Previous message in conversation",
+        };
+        
+        console.log(`[REPLY] Obtenido authorId del historial: ${authorId}`);
+      }
+    }
+  }
 
   if (!messageData) {
     return interaction.reply({
@@ -81,9 +116,14 @@ async function handleReplyButton(interaction, isDM) {
   const actionRow = new ActionRowBuilder().addComponents(replyInput);
   modal.addComponents(actionRow);
 
+  // Mostrar modal sin try/catch para que Discord maneje el error
   await interaction.showModal(modal);
 }
 
+/**
+ * Maneja el botón de eliminar mensaje anónimo
+ * @param {Interaction} interaction - La interacción del botón
+ */
 async function handleDeleteButton(interaction) {
   try {
     // Eliminar el mensaje
@@ -108,6 +148,10 @@ async function handleDeleteButton(interaction) {
   }
 }
 
+/**
+ * Maneja los botones de navegación del historial
+ * @param {Interaction} interaction - La interacción del botón
+ */
 async function handleNavigationButton(interaction) {
   try {
     // Parsear el customId: nav_prev_conversationId_currentIndex o nav_next_conversationId_currentIndex
