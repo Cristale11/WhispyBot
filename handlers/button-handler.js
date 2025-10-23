@@ -8,7 +8,7 @@ const {
 const {
   getAnonymousMessage,
   hasUserReplied,
-} = require("../utils/message-storage");
+} = require("../utils/messageStorage");
 
 /**
  * Maneja las interacciones de botones
@@ -65,8 +65,6 @@ async function handleReplyButton(interaction, isDM) {
         const firstMessage = history.messages[0];
         
         // Determinar quién es el autor original (el otro participante)
-        // Si el usuario actual es el targetId, entonces el authorId es quien envió
-        // Si el usuario actual es el authorId, entonces responde al targetId
         const authorId = firstMessage.targetId === userId 
           ? firstMessage.authorId 
           : firstMessage.targetId;
@@ -116,8 +114,16 @@ async function handleReplyButton(interaction, isDM) {
   const actionRow = new ActionRowBuilder().addComponents(replyInput);
   modal.addComponents(actionRow);
 
-  // Mostrar modal sin try/catch para que Discord maneje el error
-  await interaction.showModal(modal);
+  // Mostrar modal inmediatamente
+  try {
+    await interaction.showModal(modal);
+  } catch (error) {
+    if (error.code === 10062) {
+      console.log('[WARN] Interacción expiró antes de mostrar modal - el usuario debe volver a clickear [Reply]');
+    } else {
+      console.error('[ERROR] Error mostrando modal:', error);
+    }
+  }
 }
 
 /**
@@ -230,6 +236,16 @@ async function handleNavigationButton(interaction) {
     // Actualizar índice y ID del mensaje actual
     setCurrentIndex(conversationId, newIndex);
     updateCurrentMessageId(conversationId, newMessage.id);
+    
+    // IMPORTANTE: Guardar authorId en message-storage para que Reply sea instantáneo
+    const { saveAnonymousMessage } = require("../utils/message-storage");
+    // Determinar el authorId correcto (el otro participante)
+    const authorId = messageData.targetId === interaction.user.id 
+      ? messageData.authorId 
+      : messageData.targetId;
+    
+    saveAnonymousMessage(newMessage.id, authorId, messageData.message || messageData.replyMessage);
+    console.log(`[NAV] Guardado authorId ${authorId} para mensaje navegado ${newMessage.id}`);
     
     // Eliminar mensaje anterior
     if (previousMessageId) {
