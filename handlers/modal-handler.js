@@ -108,19 +108,27 @@ async function handleReplyModal(interaction, isDM) {
     updateCurrentMessageId(conversationId, sentReply.id);
     console.log(`[DEBUG-REPLY] CurrentMessageID actualizado a: ${sentReply.id}`);
     
-    // ELIMINAR mensaje anterior DESPUÉS de enviar el nuevo (para evitar gaps)
+    // ELIMINAR mensaje anterior DESPUÉS de enviar el nuevo
+    // El mensaje anterior está en el DM del destinatario actual (originalAuthor)
+    // porque fue el último mensaje que recibió en esta conversación
     if (previousMessageId) {
       console.log(`[DEBUG-REPLY] Intentando eliminar mensaje anterior: ${previousMessageId}`);
       try {
+        // El mensaje anterior está en el DM del DESTINATARIO (quien recibe este mensaje)
         const channel = await originalAuthor.createDM();
         const previousMessage = await channel.messages.fetch(previousMessageId);
         await previousMessage.delete();
-        console.log(`[REPLY] ✅ Mensaje anterior ${previousMessageId} eliminado - solo se muestra el más reciente`);
+        console.log(`[REPLY] ✅ Mensaje anterior ${previousMessageId} eliminado del DM de ${originalAuthor.tag}`);
       } catch (error) {
-        console.log(`[REPLY] ❌ No se pudo eliminar mensaje anterior ${previousMessageId}: ${error.message}`);
+        // Si falla, puede ser que:
+        // 1. El mensaje ya fue eliminado manualmente
+        // 2. El mensaje está en otro DM (error de lógica)
+        // 3. Permisos insuficientes
+        console.log(`[REPLY] ⚠️ No se pudo eliminar mensaje ${previousMessageId}: ${error.message}`);
+        console.log(`[REPLY] Esto puede ser normal si el usuario eliminó el mensaje manualmente con [Delete]`);
       }
     } else {
-      console.log(`[DEBUG-REPLY] No hay mensaje anterior para eliminar (es el primer mensaje de la conversación)`);
+      console.log(`[DEBUG-REPLY] No hay mensaje anterior para eliminar (primer mensaje de la conversación)`);
     }
 
     // Guardar la respuesta para permitir nuevas replies
