@@ -126,17 +126,38 @@ async function handleReplyModal(interaction, isDM) {
       `[REPLY] ${interaction.user.tag} (${interaction.user.id}) -> ${originalAuthor.tag} (${originalAuthor.id}): ${replyMessage}`
     );
 
-    await interaction.reply({
-      content: "Your anonymous reply was sent successfully!",
-      flags: MessageFlags.Ephemeral,
-    });
+    // Responder al usuario
+    try {
+      await interaction.reply({
+        content: "Your anonymous reply was sent successfully!",
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (replyError) {
+      // Error 10062 = Usuario tardó >3s en enviar el modal
+      if (replyError.code === 10062) {
+        console.log('[INFO] Usuario tardó >3s en enviar modal - reply ya fue enviado correctamente');
+        // El mensaje ya se envió correctamente, solo no podemos confirmar al usuario
+        return;
+      }
+      console.error('[ERROR] Error enviando confirmación:', replyError);
+    }
   } catch (error) {
     console.error("Error sending reply:", error);
 
-    await interaction.reply({
-      content: "Could not send the reply. The user may have DMs disabled.",
-      flags: MessageFlags.Ephemeral,
-    });
+    // Intentar responder al usuario sobre el error
+    try {
+      await interaction.reply({
+        content: "Could not send the reply. The user may have DMs disabled.",
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (replyError) {
+      // Si también falla responder el error, solo loggearlo
+      if (replyError.code === 10062) {
+        console.log('[INFO] No se pudo enviar mensaje de error - interacción expiró');
+      } else {
+        console.error('[ERROR] Error enviando mensaje de error:', replyError);
+      }
+    }
   }
 }
 
