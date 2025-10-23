@@ -41,12 +41,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setCustomId("reply_anonymous")
           .setLabel("Reply")
           .setStyle(ButtonStyle.Primary)
-          .setEmoji("💬"),
-        new ButtonBuilder()
-          .setCustomId("delete_anonymous_dm")
-          .setLabel("Delete")
-          .setStyle(ButtonStyle.Danger)
-          .setEmoji("🗑️")
+          .setEmoji("💬")
       );
 
       const sentMessage = await interaction.channel.send({
@@ -98,7 +93,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
             .setCustomId("reply_anonymous_dm")
             .setLabel("Reply")
             .setStyle(ButtonStyle.Primary)
-            .setEmoji("💬")
+            .setEmoji("💬"),
+          new ButtonBuilder()
+            .setCustomId("delete_anonymous_dm")
+            .setLabel("Delete")
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji("🗑️")
         );
 
         // Actualizar el mensaje con el color correcto
