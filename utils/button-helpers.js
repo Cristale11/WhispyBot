@@ -16,7 +16,6 @@ function createNavigationButtons(conversationId, currentIndex, totalMessages, is
     buttons.push(
       new ButtonBuilder()
         .setCustomId(`nav_prev_${conversationId}_${currentIndex}`)
-        .setLabel("Prev")
         .setEmoji("⬅️")
         .setStyle(ButtonStyle.Secondary)
     );
@@ -27,7 +26,6 @@ function createNavigationButtons(conversationId, currentIndex, totalMessages, is
     buttons.push(
       new ButtonBuilder()
         .setCustomId(`nav_next_${conversationId}_${currentIndex}`)
-        .setLabel("Next")
         .setEmoji("➡️")
         .setStyle(ButtonStyle.Secondary)
     );

@@ -61,8 +61,10 @@ async function handleReplyModal(interaction, isDM) {
     // Obtener el conversationId del mensaje original
     const conversationId = getConversationFromMessage(messageId) || messageId;
 
-    // Obtener mensaje anterior para eliminarlo
+    // Obtener mensaje anterior para eliminarlo ANTES de enviar el nuevo
     const previousMessageId = getCurrentMessageId(conversationId);
+    console.log(`[DEBUG-REPLY] ConversationID: ${conversationId}`);
+    console.log(`[DEBUG-REPLY] PreviousMessageID: ${previousMessageId || 'NINGUNO (primer mensaje)'}`);
     
     // Agregar mensaje al historial
     addMessageToHistory(conversationId, null, {
@@ -95,6 +97,8 @@ async function handleReplyModal(interaction, isDM) {
       embeds: [embed],
       components: [row],
     });
+    
+    console.log(`[DEBUG-REPLY] Nuevo mensaje enviado con ID: ${sentReply.id}`);
 
     // Registrar el mensaje de respuesta con el mismo conversationId
     const { registerMessageToConversation } = require("../utils/user-colors");
@@ -102,17 +106,21 @@ async function handleReplyModal(interaction, isDM) {
     
     // Actualizar el ID del mensaje actual
     updateCurrentMessageId(conversationId, sentReply.id);
+    console.log(`[DEBUG-REPLY] CurrentMessageID actualizado a: ${sentReply.id}`);
     
-    // Eliminar mensaje anterior si existe
+    // ELIMINAR mensaje anterior DESPUÉS de enviar el nuevo (para evitar gaps)
     if (previousMessageId) {
+      console.log(`[DEBUG-REPLY] Intentando eliminar mensaje anterior: ${previousMessageId}`);
       try {
         const channel = await originalAuthor.createDM();
         const previousMessage = await channel.messages.fetch(previousMessageId);
         await previousMessage.delete();
-        console.log(`[HISTORY] Mensaje anterior ${previousMessageId} eliminado`);
+        console.log(`[REPLY] ✅ Mensaje anterior ${previousMessageId} eliminado - solo se muestra el más reciente`);
       } catch (error) {
-        console.log(`[HISTORY] No se pudo eliminar mensaje anterior: ${error.message}`);
+        console.log(`[REPLY] ❌ No se pudo eliminar mensaje anterior ${previousMessageId}: ${error.message}`);
       }
+    } else {
+      console.log(`[DEBUG-REPLY] No hay mensaje anterior para eliminar (es el primer mensaje de la conversación)`);
     }
 
     // Guardar la respuesta para permitir nuevas replies
