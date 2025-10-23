@@ -8,7 +8,7 @@ const {
 const {
   getAnonymousMessage,
   hasUserReplied,
-} = require("../utils/messageStorage");
+} = require("../utils/message-storage");
 
 /**
  * Maneja las interacciones de botones
