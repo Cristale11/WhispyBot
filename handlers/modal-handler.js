@@ -54,17 +54,20 @@ async function handleReplyModal(interaction, isDM) {
       addMessageToHistory, 
       getConversationHistory,
       getCurrentMessageId,
-      updateCurrentMessageId 
+      updateCurrentMessageId,
+      setUserMessage,
+      getUserMessage
     } = require("../utils/conversation-history");
     const { createNavigationButtons } = require("../utils/button-helpers");
     
     // Obtener el conversationId del mensaje original
     const conversationId = getConversationFromMessage(messageId) || messageId;
 
-    // Obtener mensaje anterior para eliminarlo ANTES de enviar el nuevo
-    const previousMessageId = getCurrentMessageId(conversationId);
+    // Obtener el último mensaje que VIO el destinatario (originalAuthor)
+    const previousMessageId = getUserMessage(conversationId, originalAuthorId);
     console.log(`[DEBUG-REPLY] ConversationID: ${conversationId}`);
-    console.log(`[DEBUG-REPLY] PreviousMessageID: ${previousMessageId || 'NINGUNO (primer mensaje)'}`);
+    console.log(`[DEBUG-REPLY] Destinatario: ${originalAuthor.tag} (${originalAuthorId})`);
+    console.log(`[DEBUG-REPLY] PreviousMessageID del destinatario: ${previousMessageId || 'NINGUNO (primer mensaje para este usuario)'}`);
     
     // Agregar mensaje al historial
     addMessageToHistory(conversationId, null, {
@@ -92,13 +95,41 @@ async function handleReplyModal(interaction, isDM) {
     // Crear botones con navegación
     const row = createNavigationButtons(conversationId, currentIndex, totalMessages, isDM);
 
-    // Enviar respuesta
+    // SOLUCIÓN: Eliminar solo los mensajes de ESTA conversación antes de enviar el nuevo
+    try {
+      const channel = await originalAuthor.createDM();
+      const messages = await channel.messages.fetch({ limit: 100 });
+      
+      // Filtrar solo mensajes del bot que pertenecen a ESTA conversación
+      const { getConversationFromMessage } = require("../utils/user-colors");
+      const botMessages = messages.filter(msg => {
+        if (msg.author.id !== client.user.id) return false;
+        const msgConversationId = getConversationFromMessage(msg.id);
+        return msgConversationId === conversationId;
+      });
+      
+      console.log(`[CLEANUP] Encontrados ${botMessages.size} mensajes de conversación ${conversationId} en DM de ${originalAuthor.tag}`);
+      
+      // Eliminar solo los mensajes de esta conversación
+      for (const [id, message] of botMessages) {
+        try {
+          await message.delete();
+          console.log(`[CLEANUP] ✅ Mensaje ${id} eliminado`);
+        } catch (err) {
+          console.log(`[CLEANUP] ⚠️ No se pudo eliminar ${id}: ${err.message}`);
+        }
+      }
+    } catch (error) {
+      console.log(`[CLEANUP] ⚠️ Error limpiando mensajes: ${error.message}`);
+    }
+
+    // Enviar respuesta (ahora el DM está limpio para esta conversación)
     const sentReply = await originalAuthor.send({
       embeds: [embed],
       components: [row],
     });
     
-    console.log(`[DEBUG-REPLY] Nuevo mensaje enviado con ID: ${sentReply.id}`);
+    console.log(`[REPLY] ✅ Nuevo mensaje enviado con ID: ${sentReply.id}`);
 
     // Registrar el mensaje de respuesta con el mismo conversationId
     const { registerMessageToConversation } = require("../utils/user-colors");
@@ -106,30 +137,6 @@ async function handleReplyModal(interaction, isDM) {
     
     // Actualizar el ID del mensaje actual
     updateCurrentMessageId(conversationId, sentReply.id);
-    console.log(`[DEBUG-REPLY] CurrentMessageID actualizado a: ${sentReply.id}`);
-    
-    // ELIMINAR mensaje anterior DESPUÉS de enviar el nuevo
-    // El mensaje anterior está en el DM del destinatario actual (originalAuthor)
-    // porque fue el último mensaje que recibió en esta conversación
-    if (previousMessageId) {
-      console.log(`[DEBUG-REPLY] Intentando eliminar mensaje anterior: ${previousMessageId}`);
-      try {
-        // El mensaje anterior está en el DM del DESTINATARIO (quien recibe este mensaje)
-        const channel = await originalAuthor.createDM();
-        const previousMessage = await channel.messages.fetch(previousMessageId);
-        await previousMessage.delete();
-        console.log(`[REPLY] ✅ Mensaje anterior ${previousMessageId} eliminado del DM de ${originalAuthor.tag}`);
-      } catch (error) {
-        // Si falla, puede ser que:
-        // 1. El mensaje ya fue eliminado manualmente
-        // 2. El mensaje está en otro DM (error de lógica)
-        // 3. Permisos insuficientes
-        console.log(`[REPLY] ⚠️ No se pudo eliminar mensaje ${previousMessageId}: ${error.message}`);
-        console.log(`[REPLY] Esto puede ser normal si el usuario eliminó el mensaje manualmente con [Delete]`);
-      }
-    } else {
-      console.log(`[DEBUG-REPLY] No hay mensaje anterior para eliminar (primer mensaje de la conversación)`);
-    }
 
     // Guardar la respuesta para permitir nuevas replies
     saveAnonymousMessage(sentReply.id, userId, replyMessage);
