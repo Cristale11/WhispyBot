@@ -53,21 +53,15 @@ async function handleReplyModal(interaction, isDM) {
     const { 
       addMessageToHistory, 
       getConversationHistory,
-      getCurrentMessageId,
-      updateCurrentMessageId,
-      setUserMessage,
-      getUserMessage
+      updateCurrentMessageId
     } = require("../utils/conversation-history");
     const { createNavigationButtons } = require("../utils/button-helpers");
     
     // Obtener el conversationId del mensaje original
     const conversationId = getConversationFromMessage(messageId) || messageId;
 
-    // Obtener el último mensaje que VIO el destinatario (originalAuthor)
-    const previousMessageId = getUserMessage(conversationId, originalAuthorId);
     console.log(`[DEBUG-REPLY] ConversationID: ${conversationId}`);
     console.log(`[DEBUG-REPLY] Destinatario: ${originalAuthor.tag} (${originalAuthorId})`);
-    console.log(`[DEBUG-REPLY] PreviousMessageID del destinatario: ${previousMessageId || 'NINGUNO (primer mensaje para este usuario)'}`);
     
     // Agregar mensaje al historial
     addMessageToHistory(conversationId, null, {
