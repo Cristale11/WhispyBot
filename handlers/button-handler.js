@@ -8,7 +8,7 @@ const {
 const {
   getAnonymousMessage,
   hasUserReplied,
-} = require("../utils/message-storage");
+} = require("../utils/messageStorage");
 
 /**
  * Maneja las interacciones de botones
@@ -224,66 +224,51 @@ async function handleNavigationButton(interaction) {
     const isDM = messageData.type === "reply_dm" || messageData.type === "initial_dm";
     const row = createNavigationButtons(conversationId, newIndex, totalMessages, isDM);
     
-    // Obtener mensaje anterior para eliminarlo
-    const previousMessageId = getCurrentMessageId(conversationId);
-    
-    // Enviar nuevo mensaje
-    const newMessage = await interaction.user.send({
-      embeds: [embed],
-      components: [row],
-    });
-    
-    // Actualizar índice y ID del mensaje actual
-    setCurrentIndex(conversationId, newIndex);
-    updateCurrentMessageId(conversationId, newMessage.id);
-    
-    // IMPORTANTE: Guardar authorId en message-storage para que Reply sea instantáneo
-    const { saveAnonymousMessage } = require("../utils/message-storage");
-    
-    // Determinar el authorId correcto según el tipo de mensaje
-    let authorId;
-    
-    if (messageData.type === "initial_dm") {
-      // Mensaje inicial: authorId y targetId están en el mensaje
-      // Si yo soy el target, el author es el otro; si yo soy el author, el target es el otro
-      authorId = messageData.targetId === interaction.user.id 
-        ? messageData.authorId 
-        : messageData.targetId;
-    } else {
-      // Respuesta: authorId está en el mensaje directamente
-      // El authorId es quien envió esta respuesta, así que el "otro" depende del historial
-      // Necesitamos el primer mensaje para saber quiénes son los participantes
+    // EDITAR el mensaje existente en lugar de crear/eliminar
+    try {
+      await interaction.update({
+        embeds: [embed],
+        components: [row],
+      });
+      
+      // Actualizar solo el índice (el messageId no cambia)
+      setCurrentIndex(conversationId, newIndex);
+      
+      // IMPORTANTE: Guardar authorId para Reply
+      // Siempre usar el primer mensaje para determinar el "otro" participante
+      const { saveAnonymousMessage } = require("../utils/message-storage");
       const firstMessage = history.messages[0];
-      authorId = firstMessage.targetId === interaction.user.id 
+      
+      // El authorId siempre es el "otro" participante
+      const authorId = firstMessage.targetId === interaction.user.id 
         ? firstMessage.authorId 
         : firstMessage.targetId;
-    }
-    
-    // Guardar con el authorId correcto
-    saveAnonymousMessage(
-      newMessage.id, 
-      authorId, 
-      messageData.message || messageData.replyMessage || messageData.originalMessage || "Message"
-    );
-    
-    console.log(`[NAV] Guardado authorId ${authorId} para mensaje navegado ${newMessage.id}`);
-    
-    // Eliminar mensaje anterior
-    if (previousMessageId) {
+      
+      // Obtener el ID del mensaje actual (no cambia, solo se edita)
+      const currentMessageId = getCurrentMessageId(conversationId);
+      
+      // Guardar con el authorId correcto
+      saveAnonymousMessage(
+        currentMessageId,
+        authorId,
+        messageData.message || messageData.replyMessage || messageData.originalMessage || "Message"
+      );
+      
+      console.log(`[NAV] Navegado a ${newIndex + 1}/${totalMessages} - authorId: ${authorId}`);
+      
+    } catch (error) {
+      console.error('[ERROR] Error editando mensaje:', error);
+      
+      // Si falla editar, informar
       try {
-        const channel = await interaction.user.createDM();
-        const previousMessage = await channel.messages.fetch(previousMessageId);
-        await previousMessage.delete();
-      } catch (error) {
-        console.log(`[NAV] No se pudo eliminar mensaje anterior: ${error.message}`);
+        await interaction.reply({
+          content: "Error navigating through messages.",
+          flags: MessageFlags.Ephemeral,
+        });
+      } catch (replyError) {
+        console.error('[ERROR] No se pudo enviar mensaje de error:', replyError);
       }
     }
-    
-    // Responder a la interacción
-    await interaction.reply({
-      content: `Showing message ${newIndex + 1} of ${totalMessages}`,
-      flags: MessageFlags.Ephemeral,
-    });
     
   } catch (error) {
     console.error("Error handling navigation:", error);
