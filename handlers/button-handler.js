@@ -8,7 +8,7 @@ const {
 const {
   getAnonymousMessage,
   hasUserReplied,
-} = require("./message-storage");
+} = require("../utils/message-storage");
 
 /**
  * Maneja las interacciones de botones
@@ -122,9 +122,9 @@ async function handleNavigationButton(interaction) {
       getCurrentMessageId,
       updateCurrentMessageId,
       setCurrentIndex
-    } = require("./conversation-history");
+    } = require("../utils/conversation-history");
     const { createNavigationButtons } = require("../utils/button-helpers");
-    const { createAnonymousDMEmbed, createReplyEmbed } = require("./embed-builder");
+    const { createAnonymousDMEmbed, createReplyEmbed } = require("../utils/embed-builder");
     
     // Calcular nuevo índice
     const newIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
