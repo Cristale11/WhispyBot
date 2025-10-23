@@ -13,7 +13,7 @@ const {
   createAnonymousMessageEmbed,
   createAnonymousDMEmbed,
 } = require("./utils/embed-builder");
-const { handleButtonInteraction } = require("./handlers/button-handler");
+const { handleButtonInteraction } = require("./utils/button-handler");
 const { handleModalInteraction } = require("./handlers/modal-handler");
 
 // Evento: Bot listo
