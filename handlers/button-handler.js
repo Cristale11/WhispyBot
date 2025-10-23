@@ -26,6 +26,10 @@ async function handleButtonInteraction(interaction) {
   if (interaction.customId === "reply_anonymous_dm") {
     await handleReplyButton(interaction, true);
   }
+  // Manejo de botón "delete_anonymous_dm" (eliminar DM)
+  if (interaction.customId === "delete_anonymous_dm") {
+    await handleDeleteButton(interaction);
+  }
 }
 
 /**
@@ -74,6 +78,30 @@ async function handleReplyButton(interaction, isDM) {
   modal.addComponents(actionRow);
 
   await interaction.showModal(modal);
+}
+
+async function handleDeleteButton(interaction) {
+  try {
+    // Eliminar el mensaje
+    await interaction.message.delete();
+
+    // Opcional: enviar confirmación efímera (el mensaje ya estará eliminado)
+    // No podemos responder porque el mensaje ya no existe
+    console.log(`[DELETE] Usuario ${interaction.user.tag} (${interaction.user.id}) eliminó un mensaje anónimo`);
+  } catch (error) {
+    console.error("Error deleting message:", error);
+
+    // Si falla, intentar responder
+    try {
+      await interaction.reply({
+        content: "Could not delete the message. It may have already been deleted.",
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (replyError) {
+      // Ignorar si no puede responder
+      console.error("Could not send error message:", replyError);
+    }
+  }
 }
 
 module.exports = { handleButtonInteraction };

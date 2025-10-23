@@ -41,7 +41,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setCustomId("reply_anonymous")
           .setLabel("Reply")
           .setStyle(ButtonStyle.Primary)
-          .setEmoji("💬")
+          .setEmoji("💬"),
+        new ButtonBuilder()
+          .setCustomId("delete_anonymous_dm")
+          .setLabel("Delete")
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji("🗑️")
       );
 
       const sentMessage = await interaction.channel.send({

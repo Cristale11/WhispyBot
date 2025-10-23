@@ -66,8 +66,14 @@ async function handleReplyModal(interaction, isDM) {
         .setCustomId(isDM ? "reply_anonymous_dm" : "reply_anonymous")
         .setLabel("Reply")
         .setStyle(ButtonStyle.Primary)
-        .setEmoji("💬")
+        .setEmoji("💬"),
+      new ButtonBuilder()
+        .setCustomId("delete_anonymous_dm")
+        .setLabel("Delete")
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji("🗑️")
     );
+
 
     // Enviar respuesta
     const sentReply = await originalAuthor.send({
@@ -77,7 +83,7 @@ async function handleReplyModal(interaction, isDM) {
 
     const { registerMessageToConversation } = require("../utils/user-colors");
     registerMessageToConversation(sentReply.id, conversationId);
-    
+
     // Guardar la respuesta para permitir nuevas replies
     saveAnonymousMessage(sentReply.id, userId, replyMessage);
 
