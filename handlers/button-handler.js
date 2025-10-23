@@ -30,6 +30,10 @@ async function handleButtonInteraction(interaction) {
   if (interaction.customId === "delete_anonymous_dm") {
     await handleDeleteButton(interaction);
   }
+
+  if (interaction.customId.startsWith("nav_prev_") || interaction.customId.startsWith("nav_next_")) {
+    await handleNavigationButton(interaction);
+  }
 }
 
 /**
@@ -99,6 +103,116 @@ async function handleDeleteButton(interaction) {
       });
     } catch (replyError) {
       // Ignorar si no puede responder
+      console.error("Could not send error message:", replyError);
+    }
+  }
+}
+
+async function handleNavigationButton(interaction) {
+  try {
+    // Parsear el customId: nav_prev_conversationId_currentIndex o nav_next_conversationId_currentIndex
+    const parts = interaction.customId.split("_");
+    const direction = parts[1]; // "prev" o "next"
+    const conversationId = parts.slice(2, -1).join("_"); // Puede tener underscores en el ID
+    const currentIndex = parseInt(parts[parts.length - 1]);
+    
+    const {
+      getConversationHistory,
+      getMessageAtIndex,
+      getCurrentMessageId,
+      updateCurrentMessageId,
+      setCurrentIndex
+    } = require("../utils/conversation-history");
+    const { createNavigationButtons } = require("../utils/button-helpers");
+    const { createAnonymousDMEmbed, createReplyEmbed } = require("../utils/embed-builder");
+    
+    // Calcular nuevo índice
+    const newIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
+    
+    // Obtener historial
+    const history = getConversationHistory(conversationId);
+    if (!history) {
+      return interaction.reply({
+        content: "Could not find conversation history.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    
+    // Validar índice
+    if (newIndex < 0 || newIndex >= history.messages.length) {
+      return interaction.reply({
+        content: "No more messages in that direction.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    
+    // Obtener mensaje del historial
+    const messageData = getMessageAtIndex(conversationId, newIndex);
+    const totalMessages = history.messages.length;
+    
+    // Crear embed según el tipo de mensaje
+    let embed;
+    if (messageData.type === "initial_dm") {
+      embed = createAnonymousDMEmbed(
+        messageData.message,
+        conversationId,
+        newIndex,
+        totalMessages
+      );
+    } else {
+      embed = createReplyEmbed(
+        messageData.originalMessage,
+        messageData.replyMessage,
+        conversationId,
+        messageData.type === "reply_dm",
+        newIndex,
+        totalMessages
+      );
+    }
+    
+    // Crear botones actualizados
+    const isDM = messageData.type === "reply_dm" || messageData.type === "initial_dm";
+    const row = createNavigationButtons(conversationId, newIndex, totalMessages, isDM);
+    
+    // Obtener mensaje anterior para eliminarlo
+    const previousMessageId = getCurrentMessageId(conversationId);
+    
+    // Enviar nuevo mensaje
+    const newMessage = await interaction.user.send({
+      embeds: [embed],
+      components: [row],
+    });
+    
+    // Actualizar índice y ID del mensaje actual
+    setCurrentIndex(conversationId, newIndex);
+    updateCurrentMessageId(conversationId, newMessage.id);
+    
+    // Eliminar mensaje anterior
+    if (previousMessageId) {
+      try {
+        const channel = await interaction.user.createDM();
+        const previousMessage = await channel.messages.fetch(previousMessageId);
+        await previousMessage.delete();
+      } catch (error) {
+        console.log(`[NAV] No se pudo eliminar mensaje anterior: ${error.message}`);
+      }
+    }
+    
+    // Responder a la interacción
+    await interaction.reply({
+      content: `Showing message ${newIndex + 1} of ${totalMessages}`,
+      flags: MessageFlags.Ephemeral,
+    });
+    
+  } catch (error) {
+    console.error("Error handling navigation:", error);
+    
+    try {
+      await interaction.reply({
+        content: "Error navigating through messages.",
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (replyError) {
       console.error("Could not send error message:", replyError);
     }
   }

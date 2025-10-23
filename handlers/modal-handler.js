@@ -50,31 +50,45 @@ async function handleReplyModal(interaction, isDM) {
   try {
     const originalAuthor = await client.users.fetch(originalAuthorId);
     const { getConversationFromMessage } = require("../utils/user-colors");
+    const { 
+      addMessageToHistory, 
+      getConversationHistory,
+      getCurrentMessageId,
+      updateCurrentMessageId 
+    } = require("../utils/conversation-history");
+    const { createNavigationButtons } = require("../utils/button-helpers");
+    
+    // Obtener el conversationId del mensaje original
     const conversationId = getConversationFromMessage(messageId) || messageId;
 
-    // Crear embed de respuesta
+    // Obtener mensaje anterior para eliminarlo
+    const previousMessageId = getCurrentMessageId(conversationId);
+    
+    // Agregar mensaje al historial
+    addMessageToHistory(conversationId, null, {
+      type: isDM ? "reply_dm" : "reply_channel",
+      originalMessage: messageData?.originalMessage,
+      replyMessage: replyMessage,
+      authorId: userId,
+    });
+    
+    // Obtener historial actualizado
+    const history = getConversationHistory(conversationId);
+    const totalMessages = history ? history.messages.length : 1;
+    const currentIndex = totalMessages - 1;
+
+    // Crear embed de respuesta con contador
     const embed = createReplyEmbed(
       messageData?.originalMessage,
       replyMessage,
       conversationId,
-      isDM
+      isDM,
+      currentIndex,
+      totalMessages
     );
 
-
-
-    // Crear botón de respuesta
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(isDM ? "reply_anonymous_dm" : "reply_anonymous")
-        .setLabel("Reply")
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji("💬"),
-      new ButtonBuilder()
-        .setCustomId("delete_anonymous_dm")
-        .setLabel("Delete")
-        .setStyle(ButtonStyle.Danger)
-        .setEmoji("🗑️")
-    );
+    // Crear botones con navegación
+    const row = createNavigationButtons(conversationId, currentIndex, totalMessages, isDM);
 
     // Enviar respuesta
     const sentReply = await originalAuthor.send({
@@ -82,8 +96,24 @@ async function handleReplyModal(interaction, isDM) {
       components: [row],
     });
 
+    // Registrar el mensaje de respuesta con el mismo conversationId
     const { registerMessageToConversation } = require("../utils/user-colors");
     registerMessageToConversation(sentReply.id, conversationId);
+    
+    // Actualizar el ID del mensaje actual
+    updateCurrentMessageId(conversationId, sentReply.id);
+    
+    // Eliminar mensaje anterior si existe
+    if (previousMessageId) {
+      try {
+        const channel = await originalAuthor.createDM();
+        const previousMessage = await channel.messages.fetch(previousMessageId);
+        await previousMessage.delete();
+        console.log(`[HISTORY] Mensaje anterior ${previousMessageId} eliminado`);
+      } catch (error) {
+        console.log(`[HISTORY] No se pudo eliminar mensaje anterior: ${error.message}`);
+      }
+    }
 
     // Guardar la respuesta para permitir nuevas replies
     saveAnonymousMessage(sentReply.id, userId, replyMessage);

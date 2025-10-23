@@ -79,13 +79,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }
 
       try {
-        const conversationId =
-          Date.now().toString() + Math.random().toString(36).substring(2);
+        // Generar un ID único para esta conversación
+        const conversationId = Date.now().toString() + Math.random().toString(36).substring(2);
 
-        // Ahora usar el ID del mensaje como conversationId y actualizar el color
+        // Crear embed con el color correcto desde el inicio
+        const { registerMessageToConversation } = require("./utils/user-colors");
         const {
-          registerMessageToConversation,
-        } = require("./utils/user-colors");
+          addMessageToHistory,
+          updateCurrentMessageId
+        } = require("./utils/conversation-history");
         const embed = createAnonymousDMEmbed(message, conversationId);
 
         const row = new ActionRowBuilder().addComponents(
@@ -101,14 +103,24 @@ client.on(Events.InteractionCreate, async (interaction) => {
             .setEmoji("🗑️")
         );
 
-        // Actualizar el mensaje con el color correcto
+        // Enviar mensaje con el color correcto desde el principio
         const sentDM = await targetUser.send({
           embeds: [embed],
           components: [row],
         });
 
+        // Registrar la conversación
         registerMessageToConversation(sentDM.id, conversationId);
         saveAnonymousMessage(sentDM.id, interaction.user.id, message);
+
+        // Inicializar historial de conversación
+        addMessageToHistory(conversationId, sentDM.id, {
+          type: "initial_dm",
+          message: message,
+          authorId: interaction.user.id,
+          targetId: targetUser.id,
+        });
+        updateCurrentMessageId(conversationId, sentDM.id);
 
         // Log del mensaje (opcional, para moderación)
         console.log(

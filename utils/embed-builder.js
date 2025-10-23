@@ -21,8 +21,15 @@ function createAnonymousMessageEmbed(message) {
  * @param {string} userId - ID del usuario (para asignar color)
  * @returns {EmbedBuilder}
  */
-function createAnonymousDMEmbed(message, conversationId) {
+function createAnonymousDMEmbed(message, conversationId, currentIndex = null, totalMessages = null) {
   const color = getColorForConversation(conversationId);
+
+  let description = message;
+
+  // Agregar contador si se proporciona
+  if (currentIndex !== null && totalMessages !== null && totalMessages > 1) {
+    description = `📊 Message ${currentIndex + 1} of ${totalMessages}\n\n${message}`;
+  }
 
   return new EmbedBuilder()
     .setColor(color)
@@ -40,13 +47,13 @@ function createAnonymousDMEmbed(message, conversationId) {
  * @param {boolean} isDM - Si es respuesta a DM
  * @returns {EmbedBuilder}
  */
-function createReplyEmbed(originalMessage, replyMessage, conversationId, isDM = false) {
+function createReplyEmbed(originalMessage, replyMessage, conversationId, isDM = false, currentIndex = null, totalMessages = null) {
   const color = getColorForConversation(conversationId);
   const footerText = isDM
     ? "Someone replied anonymously to your message"
     : "Someone replied anonymously to your message in a server";
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(color)
     .setTitle("Anonymous reply to your message")
     .addFields({
@@ -61,6 +68,13 @@ function createReplyEmbed(originalMessage, replyMessage, conversationId, isDM = 
     })
     .setFooter({ text: footerText })
     .setTimestamp();
+  
+  // Agregar contador si se proporciona
+  if (currentIndex !== null && totalMessages !== null && totalMessages > 1) {
+    embed.setDescription(`📊 Message ${currentIndex + 1} of ${totalMessages}`);
+  }
+  
+  return embed;
 }
 
 module.exports = {
