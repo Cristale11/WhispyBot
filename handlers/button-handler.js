@@ -8,7 +8,7 @@ const {
 const {
   getAnonymousMessage,
   hasUserReplied,
-} = require("../utils/message-storage");
+} = require("../utils/messageStorage");
 
 /**
  * Maneja las interacciones de botones
@@ -239,12 +239,33 @@ async function handleNavigationButton(interaction) {
     
     // IMPORTANTE: Guardar authorId en message-storage para que Reply sea instantáneo
     const { saveAnonymousMessage } = require("../utils/message-storage");
-    // Determinar el authorId correcto (el otro participante)
-    const authorId = messageData.targetId === interaction.user.id 
-      ? messageData.authorId 
-      : messageData.targetId;
     
-    saveAnonymousMessage(newMessage.id, authorId, messageData.message || messageData.replyMessage);
+    // Determinar el authorId correcto según el tipo de mensaje
+    let authorId;
+    
+    if (messageData.type === "initial_dm") {
+      // Mensaje inicial: authorId y targetId están en el mensaje
+      // Si yo soy el target, el author es el otro; si yo soy el author, el target es el otro
+      authorId = messageData.targetId === interaction.user.id 
+        ? messageData.authorId 
+        : messageData.targetId;
+    } else {
+      // Respuesta: authorId está en el mensaje directamente
+      // El authorId es quien envió esta respuesta, así que el "otro" depende del historial
+      // Necesitamos el primer mensaje para saber quiénes son los participantes
+      const firstMessage = history.messages[0];
+      authorId = firstMessage.targetId === interaction.user.id 
+        ? firstMessage.authorId 
+        : firstMessage.targetId;
+    }
+    
+    // Guardar con el authorId correcto
+    saveAnonymousMessage(
+      newMessage.id, 
+      authorId, 
+      messageData.message || messageData.replyMessage || messageData.originalMessage || "Message"
+    );
+    
     console.log(`[NAV] Guardado authorId ${authorId} para mensaje navegado ${newMessage.id}`);
     
     // Eliminar mensaje anterior
