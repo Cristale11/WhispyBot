@@ -46,34 +46,34 @@ async function handleButtonInteraction(interaction) {
 async function handleReplyButton(interaction, isDM) {
   const messageId = interaction.message.id;
   const userId = interaction.user.id;
-  
+
   // Primero intentar obtener de message-storage (mensajes recientes)
   let messageData = getAnonymousMessage(messageId);
-  
+
   // Si no está en message-storage, obtener del historial de conversación
   if (!messageData) {
     const { getConversationFromMessage } = require("../utils/user-colors");
     const { getConversationHistory } = require("../utils/conversation-history");
-    
+
     const conversationId = getConversationFromMessage(messageId);
-    
+
     if (conversationId) {
       const history = getConversationHistory(conversationId);
-      
+
       if (history && history.messages.length > 0) {
         // Obtener el authorId del primer mensaje (quien inició la conversación)
         const firstMessage = history.messages[0];
-        
+
         // Determinar quién es el autor original (el otro participante)
-        const authorId = firstMessage.targetId === userId 
-          ? firstMessage.authorId 
+        const authorId = firstMessage.targetId === userId
+          ? firstMessage.authorId
           : firstMessage.targetId;
-        
+
         messageData = {
           authorId: authorId,
           originalMessage: "Previous message in conversation",
         };
-        
+
         console.log(`[REPLY] Obtenido authorId del historial: ${authorId}`);
       }
     }
@@ -165,7 +165,7 @@ async function handleNavigationButton(interaction) {
     const direction = parts[1]; // "prev" o "next"
     const conversationId = parts.slice(2, -1).join("_"); // Puede tener underscores en el ID
     const currentIndex = parseInt(parts[parts.length - 1]);
-    
+
     const {
       getConversationHistory,
       getMessageAtIndex,
@@ -175,10 +175,10 @@ async function handleNavigationButton(interaction) {
     } = require("../utils/conversation-history");
     const { createNavigationButtons } = require("../utils/button-helpers");
     const { createAnonymousDMEmbed, createReplyEmbed } = require("../utils/embed-builder");
-    
+
     // Calcular nuevo índice
     const newIndex = direction === "prev" ? currentIndex - 1 : currentIndex + 1;
-    
+
     // Obtener historial
     const history = getConversationHistory(conversationId);
     if (!history) {
@@ -187,7 +187,7 @@ async function handleNavigationButton(interaction) {
         flags: MessageFlags.Ephemeral,
       });
     }
-    
+
     // Validar índice
     if (newIndex < 0 || newIndex >= history.messages.length) {
       return interaction.reply({
@@ -195,11 +195,11 @@ async function handleNavigationButton(interaction) {
         flags: MessageFlags.Ephemeral,
       });
     }
-    
+
     // Obtener mensaje del historial
     const messageData = getMessageAtIndex(conversationId, newIndex);
     const totalMessages = history.messages.length;
-    
+
     // Crear embed según el tipo de mensaje
     let embed;
     if (messageData.type === "initial_dm") {
@@ -219,46 +219,47 @@ async function handleNavigationButton(interaction) {
         totalMessages
       );
     }
-    
+
     // Crear botones actualizados
     const isDM = messageData.type === "reply_dm" || messageData.type === "initial_dm";
     const row = createNavigationButtons(conversationId, newIndex, totalMessages, isDM);
-    
+
     // EDITAR el mensaje existente en lugar de crear/eliminar
     try {
       await interaction.update({
         embeds: [embed],
         components: [row],
       });
-      
+
       // Actualizar solo el índice (el messageId no cambia)
       setCurrentIndex(conversationId, newIndex);
-      
+
       // IMPORTANTE: Guardar authorId para Reply
       // Siempre usar el primer mensaje para determinar el "otro" participante
       const { saveAnonymousMessage } = require("../utils/message-storage");
       const firstMessage = history.messages[0];
-      
+
       // El authorId siempre es el "otro" participante
-      const authorId = firstMessage.targetId === interaction.user.id 
-        ? firstMessage.authorId 
+      const authorId = firstMessage.targetId === interaction.user.id
+        ? firstMessage.authorId
         : firstMessage.targetId;
-      
+
       // Obtener el ID del mensaje actual (no cambia, solo se edita)
       const currentMessageId = getCurrentMessageId(conversationId);
-      
+      const latestMessageData = history.messages[history.messages.length - 1];
+
       // Guardar con el authorId correcto
       saveAnonymousMessage(
         currentMessageId,
         authorId,
-        messageData.message || messageData.replyMessage || messageData.originalMessage || "Message"
+        latestMessageData.message || latestMessageData.replyMessage || latestMessageData.originalMessage || "Message"
       );
-      
+
       console.log(`[NAV] Navegado a ${newIndex + 1}/${totalMessages} - authorId: ${authorId}`);
-      
+
     } catch (error) {
       console.error('[ERROR] Error editando mensaje:', error);
-      
+
       // Si falla editar, informar
       try {
         await interaction.reply({
@@ -269,10 +270,10 @@ async function handleNavigationButton(interaction) {
         console.error('[ERROR] No se pudo enviar mensaje de error:', replyError);
       }
     }
-    
+
   } catch (error) {
     console.error("Error handling navigation:", error);
-    
+
     try {
       await interaction.reply({
         content: "Error navigating through messages.",
