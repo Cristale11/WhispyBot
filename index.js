@@ -62,14 +62,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
         if (error.code === 50013) {
           // Missing Permissions
           return interaction.reply({
-            content: "❌ I don't have permission to send messages in this channel. Please ask a server admin to give me the `Send Messages` permission.",
+            content: "I don't have permission to send messages in this channel. Please ask a server admin to give me the `Send Messages` permission.",
             flags: MessageFlags.Ephemeral,
           });
         }
 
         // Other errors
         return interaction.reply({
-          content: "❌ Failed to send the anonymous message. Please try again later.",
+          content: "Failed to send the anonymous message. Please try again later.",
           flags: MessageFlags.Ephemeral,
         });
       }
