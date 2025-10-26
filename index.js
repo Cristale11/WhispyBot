@@ -44,17 +44,35 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setEmoji("💬")
       );
 
-      const sentMessage = await interaction.channel.send({
-        embeds: [embed],
-        components: [row],
-      });
+      try {
+        const sentMessage = await interaction.channel.send({
+          embeds: [embed],
+          components: [row],
+        });
 
-      saveAnonymousMessage(sentMessage.id, interaction.user.id, message);
+        saveAnonymousMessage(sentMessage.id, interaction.user.id, message);
 
-      await interaction.reply({
-        content: "Your message was sent anonymously.",
-        flags: MessageFlags.Ephemeral,
-      });
+        await interaction.reply({
+          content: "Your message was sent anonymously.",
+          flags: MessageFlags.Ephemeral,
+        });
+      } catch (error) {
+        console.error(`[ERROR] Failed to send anonymous message in channel ${interaction.channel.id}: ${error.message}`);
+
+        if (error.code === 50013) {
+          // Missing Permissions
+          return interaction.reply({
+            content: "❌ I don't have permission to send messages in this channel. Please ask a server admin to give me the `Send Messages` permission.",
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+
+        // Other errors
+        return interaction.reply({
+          content: "❌ Failed to send the anonymous message. Please try again later.",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
     }
 
     // Comando: /annondm
@@ -148,6 +166,33 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   // ========== MODALES ==========
   await handleModalInteraction(interaction);
+});
+
+// ===== MANEJADORES DE ERRORES (ANTES DEL LOGIN) =====
+
+process.on('unhandledRejection', (error) => {
+  // Error 10062 = Unknown interaction (timeout normal de Discord)
+  if (error.code === 10062) {
+    console.log('[INFO] Interacción expiró (>3s) - esto es normal');
+    return;
+  }
+
+  // Error 50013 = Missing Permissions
+  if (error.code === 50013) {
+    console.log('[WARN] Missing Permissions - el bot no tiene permisos necesarios');
+    return;
+  }
+
+  console.error('[ERROR] Unhandled promise rejection:', error);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[ERROR] Uncaught exception:', error);
+  // No hacer process.exit() para que el bot siga funcionando
+});
+
+client.on('error', (error) => {
+  console.error('[ERROR] Discord client error:', error);
 });
 
 // Login
