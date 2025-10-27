@@ -239,23 +239,48 @@ async function handleNavigationButton(interaction) {
       const { saveAnonymousMessage } = require("../utils/message-storage");
       const firstMessage = history.messages[0];
 
+      // DEBUG: Verificar que firstMessage tenga la estructura correcta
+      console.log(`[DEBUG-NAV] firstMessage:`, {
+        type: firstMessage.type,
+        authorId: firstMessage.authorId,
+        targetId: firstMessage.targetId,
+        hasAuthorId: !!firstMessage.authorId,
+        hasTargetId: !!firstMessage.targetId,
+        currentUserId: interaction.user.id
+      });
+
       // El authorId siempre es el "otro" participante
-      const authorId = firstMessage.targetId === interaction.user.id
-        ? firstMessage.authorId
-        : firstMessage.targetId;
+      let authorId;
+      if (!firstMessage.authorId || !firstMessage.targetId) {
+        console.error('[ERROR] firstMessage no tiene authorId o targetId definidos');
+        // Intentar recuperar del messageData
+        authorId = messageData.authorId;
+      } else {
+        authorId = firstMessage.targetId === interaction.user.id
+          ? firstMessage.authorId
+          : firstMessage.targetId;
+      }
+
+      // Validar que authorId no sea undefined
+      if (!authorId) {
+        console.error('[ERROR] No se pudo determinar authorId - abortando guardado');
+        return; // No guardar si no hay authorId válido
+      }
 
       // Obtener el ID del mensaje actual (no cambia, solo se edita)
       const currentMessageId = getCurrentMessageId(conversationId);
+      
+      // Obtener el ÚLTIMO mensaje para responder (no el actual)
       const latestMessageData = history.messages[history.messages.length - 1];
 
-      // Guardar con el authorId correcto
+      // Guardar con el authorId correcto usando el ÚLTIMO mensaje
       saveAnonymousMessage(
         currentMessageId,
-        authorId,
+        authorId,  // Este es el autor correcto
         latestMessageData.message || latestMessageData.replyMessage || latestMessageData.originalMessage || "Message"
       );
 
-      console.log(`[NAV] Navegado a ${newIndex + 1}/${totalMessages} - authorId: ${authorId}`);
+      console.log(`[NAV] ✅ Navegado a ${newIndex + 1}/${totalMessages} - authorId: ${authorId} - Responderá al mensaje ${totalMessages}`);
 
     } catch (error) {
       console.error('[ERROR] Error editando mensaje:', error);

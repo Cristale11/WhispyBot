@@ -47,6 +47,17 @@ async function handleReplyModal(interaction, isDM) {
   const replyMessage = interaction.fields.getTextInputValue("reply_message");
   const messageData = getAnonymousMessage(messageId);
 
+  // DEBUG: Verificar que originalAuthorId sea válido
+  console.log(`[DEBUG-MODAL] originalAuthorId: ${originalAuthorId}, type: ${typeof originalAuthorId}`);
+  
+  if (!originalAuthorId || originalAuthorId === 'undefined') {
+    console.error('[ERROR] originalAuthorId es undefined - no se puede enviar reply');
+    return interaction.reply({
+      content: "Error: Could not find the recipient of this message. Please try again.",
+      flags: MessageFlags.Ephemeral,
+    }).catch(err => console.error('[ERROR] No se pudo enviar mensaje de error:', err));
+  }
+
   try {
     const originalAuthor = await client.users.fetch(originalAuthorId);
     const { getConversationFromMessage } = require("../utils/user-colors");
@@ -63,12 +74,13 @@ async function handleReplyModal(interaction, isDM) {
     console.log(`[DEBUG-REPLY] ConversationID: ${conversationId}`);
     console.log(`[DEBUG-REPLY] Destinatario: ${originalAuthor.tag} (${originalAuthorId})`);
     
-    // Agregar mensaje al historial
+    // Agregar mensaje al historial - IMPORTANTE: incluir authorId y targetId
     addMessageToHistory(conversationId, null, {
       type: isDM ? "reply_dm" : "reply_channel",
       originalMessage: messageData?.originalMessage,
       replyMessage: replyMessage,
-      authorId: userId,
+      authorId: userId,  // Quien envía la respuesta
+      targetId: originalAuthorId,  // Quien la recibe
     });
     
     // Obtener historial actualizado
@@ -133,6 +145,7 @@ async function handleReplyModal(interaction, isDM) {
     updateCurrentMessageId(conversationId, sentReply.id);
 
     // Guardar la respuesta para permitir nuevas replies
+    // IMPORTANTE: El authorId aquí es quien ENVIÓ este mensaje (userId)
     saveAnonymousMessage(sentReply.id, userId, replyMessage);
 
     // Marcar que el usuario respondió
