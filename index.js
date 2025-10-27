@@ -169,6 +169,134 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
       }
     }
+
+    if (interaction.commandName === "randomdm") {
+      const message = interaction.options.getString("message");
+
+      // Responder inmediatamente
+      await interaction.reply({
+        content: "Searching for a random user...",
+        flags: MessageFlags.Ephemeral,
+      });
+
+      let targetUser = null;
+      let attempts = 0;
+      const MAX_ATTEMPTS = 50;
+
+      // Obtener miembros UNA SOLA VEZ (fuera del bucle)
+      const guild = interaction.guild;
+      const members = await guild.members.fetch();
+
+      // Filtrar miembros válidos (no bots, no el usuario actual)
+      const validMembers = members.filter(
+        (member) => !member.user.bot && member.id !== interaction.user.id
+      );
+
+      if (validMembers.size === 0) {
+        return interaction.editReply({
+          content: "❌ No valid users found in this server.",
+        });
+      }
+
+      console.log(
+        `[RANDOMDM] ${validMembers.size} usuarios válidos disponibles`
+      );
+
+      // Bucle para encontrar usuario con DMs activados
+      while (!targetUser && attempts < MAX_ATTEMPTS) {
+        attempts++;
+
+        // Elegir miembro aleatorio de los válidos
+        const randomMember = validMembers.random();
+
+        // Solo verificar DMs
+        try {
+          await randomMember.createDM();
+          targetUser = randomMember.user;
+          console.log(
+            `[RANDOMDM] ✅ Usuario encontrado en intento ${attempts}: ${targetUser.tag}`
+          );
+        } catch (error) {
+          console.log(
+            `[RANDOMDM] Intento ${attempts}: DMs desactivados - reintentando`
+          );
+          // Opcional: remover este miembro de validMembers para no repetirlo
+          validMembers.delete(randomMember.id);
+
+          if (validMembers.size === 0) {
+            return interaction.editReply({
+              content:
+                "❌ No users with DMs enabled found after checking all members.",
+            });
+          }
+          continue;
+        }
+      }
+
+      if (!targetUser) {
+        return interaction.editReply({
+          content: `❌ Could not find a user with DMs enabled after ${MAX_ATTEMPTS} attempts.`,
+        });
+      }
+
+      // Enviar mensaje (resto del código igual)
+      try {
+        const conversationId =
+          Date.now().toString() + Math.random().toString(36).substring(2);
+        const {
+          registerMessageToConversation,
+        } = require("./utils/user-colors");
+        const {
+          addMessageToHistory,
+          updateCurrentMessageId,
+        } = require("./utils/conversation-history");
+
+        const embed = createAnonymousDMEmbed(message, conversationId);
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("reply_anonymous_dm")
+            .setLabel("Reply")
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji("💬"),
+          new ButtonBuilder()
+            .setCustomId("delete_anonymous_dm")
+            .setLabel("Delete")
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji("🗑️")
+        );
+
+        const sentDM = await targetUser.send({
+          embeds: [embed],
+          components: [row],
+        });
+
+        registerMessageToConversation(sentDM.id, conversationId);
+        saveAnonymousMessage(sentDM.id, interaction.user.id, message);
+
+        addMessageToHistory(conversationId, sentDM.id, {
+          type: "initial_dm",
+          message: message,
+          authorId: interaction.user.id,
+          targetId: targetUser.id,
+        });
+        updateCurrentMessageId(conversationId, sentDM.id);
+
+        console.log(
+          `[RANDOMDM] ${interaction.user.tag} (${interaction.user.id}) -> ${targetUser.tag} (${targetUser.id}): ${message}`
+        );
+
+        await interaction.editReply({
+          content: `Your anonymous message was sent to a random user! (${attempts} attempt${
+            attempts > 1 ? "s" : ""
+          })`,
+        });
+      } catch (error) {
+        console.error("[ERROR] Error sending random DM:", error);
+        await interaction.editReply({
+          content: "Could not send the message. Please try again.",
+        });
+      }
+    }
   }
 
   // ========== BOTONES ==========
