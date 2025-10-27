@@ -239,16 +239,6 @@ async function handleNavigationButton(interaction) {
       const { saveAnonymousMessage } = require("../utils/message-storage");
       const firstMessage = history.messages[0];
 
-      // DEBUG: Verificar que firstMessage tenga la estructura correcta
-      console.log(`[DEBUG-NAV] firstMessage:`, {
-        type: firstMessage.type,
-        authorId: firstMessage.authorId,
-        targetId: firstMessage.targetId,
-        hasAuthorId: !!firstMessage.authorId,
-        hasTargetId: !!firstMessage.targetId,
-        currentUserId: interaction.user.id
-      });
-
       // El authorId siempre es el "otro" participante
       let authorId;
       if (!firstMessage.authorId || !firstMessage.targetId) {

@@ -46,9 +46,6 @@ async function handleReplyModal(interaction, isDM) {
   const userId = interaction.user.id;
   const replyMessage = interaction.fields.getTextInputValue("reply_message");
   const messageData = getAnonymousMessage(messageId);
-
-  // DEBUG: Verificar que originalAuthorId sea válido
-  console.log(`[DEBUG-MODAL] originalAuthorId: ${originalAuthorId}, type: ${typeof originalAuthorId}`);
   
   if (!originalAuthorId || originalAuthorId === 'undefined') {
     console.error('[ERROR] originalAuthorId es undefined - no se puede enviar reply');
@@ -70,9 +67,6 @@ async function handleReplyModal(interaction, isDM) {
     
     // Obtener el conversationId del mensaje original
     const conversationId = getConversationFromMessage(messageId) || messageId;
-
-    console.log(`[DEBUG-REPLY] ConversationID: ${conversationId}`);
-    console.log(`[DEBUG-REPLY] Destinatario: ${originalAuthor.tag} (${originalAuthorId})`);
     
     // Agregar mensaje al historial - IMPORTANTE: incluir authorId y targetId
     addMessageToHistory(conversationId, null, {
