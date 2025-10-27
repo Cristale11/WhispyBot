@@ -15,10 +15,13 @@ const {
 } = require("./utils/embed-builder");
 const { handleButtonInteraction } = require("./handlers/button-handler");
 const { handleModalInteraction } = require("./handlers/modal-handler");
+const { loadHistoryFromFile } = require("./utils/conversation-history");
 
 // Evento: Bot listo
 client.once(Events.ClientReady, (c) => {
   console.log(`Bot conectado como ${c.user.tag}`);
+
+  loadHistoryFromFile();
 
   client.user.setPresence({
     activities: [{ name: "/annonmsg · /annondm @user", type: 3 }],
@@ -57,19 +60,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
           flags: MessageFlags.Ephemeral,
         });
       } catch (error) {
-        console.error(`[ERROR] Failed to send anonymous message in channel ${interaction.channel.id}: ${error.message}`);
+        console.error(
+          `[ERROR] Failed to send anonymous message in channel ${interaction.channel.id}: ${error.message}`
+        );
 
         if (error.code === 50013) {
           // Missing Permissions
           return interaction.reply({
-            content: "I don't have permission to send messages in this channel. Please ask a server admin to give me the `Send Messages` permission.",
+            content:
+              "I don't have permission to send messages in this channel. Please ask a server admin to give me the `Send Messages` permission.",
             flags: MessageFlags.Ephemeral,
           });
         }
 
         // Other errors
         return interaction.reply({
-          content: "Failed to send the anonymous message. Please try again later.",
+          content:
+            "Failed to send the anonymous message. Please try again later.",
           flags: MessageFlags.Ephemeral,
         });
       }
@@ -98,13 +105,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       try {
         // Generar un ID único para esta conversación
-        const conversationId = Date.now().toString() + Math.random().toString(36).substring(2);
+        const conversationId =
+          Date.now().toString() + Math.random().toString(36).substring(2);
 
         // Crear embed con el color correcto desde el inicio
-        const { registerMessageToConversation } = require("./utils/user-colors");
+        const {
+          registerMessageToConversation,
+        } = require("./utils/user-colors");
         const {
           addMessageToHistory,
-          updateCurrentMessageId
+          updateCurrentMessageId,
         } = require("./utils/conversation-history");
         const embed = createAnonymousDMEmbed(message, conversationId);
 
@@ -170,29 +180,31 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // ===== MANEJADORES DE ERRORES (ANTES DEL LOGIN) =====
 
-process.on('unhandledRejection', (error) => {
+process.on("unhandledRejection", (error) => {
   // Error 10062 = Unknown interaction (timeout normal de Discord)
   if (error.code === 10062) {
-    console.log('[INFO] Interacción expiró (>3s) - esto es normal');
+    console.log("[INFO] Interacción expiró (>3s) - esto es normal");
     return;
   }
 
   // Error 50013 = Missing Permissions
   if (error.code === 50013) {
-    console.log('[WARN] Missing Permissions - el bot no tiene permisos necesarios');
+    console.log(
+      "[WARN] Missing Permissions - el bot no tiene permisos necesarios"
+    );
     return;
   }
 
-  console.error('[ERROR] Unhandled promise rejection:', error);
+  console.error("[ERROR] Unhandled promise rejection:", error);
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('[ERROR] Uncaught exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("[ERROR] Uncaught exception:", error);
   // No hacer process.exit() para que el bot siga funcionando
 });
 
-client.on('error', (error) => {
-  console.error('[ERROR] Discord client error:', error);
+client.on("error", (error) => {
+  console.error("[ERROR] Discord client error:", error);
 });
 
 // Login

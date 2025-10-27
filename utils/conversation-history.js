@@ -1,8 +1,64 @@
 // Sistema de gestión de historial de conversaciones
 
+const fs = require('fs');
+const path = require('path');
+
+// Ruta del archivo de persistencia
+const HISTORY_FILE = path.join(__dirname, '..', 'data', 'conversation-history.json');
+
 // Almacena el historial de cada conversación
 // Estructura: conversationId → { currentMessageId, currentIndex, messages[] }
 const conversationHistories = new Map();
+
+/**
+ * Guarda el historial en un archivo JSON
+ */
+function saveHistoryToFile() {
+  try {
+    // Crear directorio si no existe
+    const dir = path.dirname(HISTORY_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Convertir Map a objeto para JSON
+    const historyObject = {};
+    conversationHistories.forEach((value, key) => {
+      historyObject[key] = value;
+    });
+
+    // Guardar en archivo
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(historyObject, null, 2), 'utf8');
+    console.log(`[HISTORY] Guardado: ${conversationHistories.size} conversaciones`);
+  } catch (error) {
+    console.error('[ERROR] No se pudo guardar el historial:', error);
+  }
+}
+
+/**
+ * Carga el historial desde el archivo JSON
+ */
+function loadHistoryFromFile() {
+  try {
+    if (!fs.existsSync(HISTORY_FILE)) {
+      console.log('[HISTORY] No existe archivo de historial - empezando desde cero');
+      return;
+    }
+
+    const data = fs.readFileSync(HISTORY_FILE, 'utf8');
+    const historyObject = JSON.parse(data);
+
+    // Convertir objeto a Map
+    conversationHistories.clear();
+    Object.keys(historyObject).forEach(key => {
+      conversationHistories.set(key, historyObject[key]);
+    });
+
+    console.log(`[HISTORY] Cargado: ${conversationHistories.size} conversaciones del historial`);
+  } catch (error) {
+    console.error('[ERROR] No se pudo cargar el historial:', error);
+  }
+}
 
 /**
  * Inicializa o actualiza el historial de una conversación
@@ -35,6 +91,9 @@ function addMessageToHistory(conversationId, messageId, messageData) {
   }
   
   console.log(`[HISTORY] Conversación ${conversationId}: ${conversationHistories.get(conversationId).messages.length} mensajes`);
+  
+  // Auto-guardar después de cada cambio
+  saveHistoryToFile();
 }
 
 /**
@@ -69,6 +128,8 @@ function setCurrentIndex(conversationId, newIndex) {
   const history = conversationHistories.get(conversationId);
   if (history) {
     history.currentIndex = newIndex;
+    // Auto-guardar después de cambiar índice
+    saveHistoryToFile();
   }
 }
 
@@ -81,6 +142,8 @@ function updateCurrentMessageId(conversationId, messageId) {
   const history = conversationHistories.get(conversationId);
   if (history) {
     history.currentMessageId = messageId;
+    // Auto-guardar después de actualizar messageId
+    saveHistoryToFile();
   }
 }
 
@@ -101,6 +164,8 @@ function getCurrentMessageId(conversationId) {
 function deleteConversationHistory(conversationId) {
   conversationHistories.delete(conversationId);
   console.log(`[HISTORY] Conversación ${conversationId} eliminada del historial`);
+  // Auto-guardar después de eliminar
+  saveHistoryToFile();
 }
 
 /**
@@ -120,6 +185,8 @@ function getHistoryStats() {
 }
 
 module.exports = {
+  loadHistoryFromFile,
+  saveHistoryToFile,
   addMessageToHistory,
   getConversationHistory,
   getMessageAtIndex,
