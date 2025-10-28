@@ -284,9 +284,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         );
 
         await interaction.editReply({
-          content: `Your anonymous message was sent to a random user! (${attempts} attempt${
-            attempts > 1 ? "s" : ""
-          })`,
+          content: `Your anonymous message was sent to a random user!`,
         });
       } catch (error) {
         console.error("[ERROR] Error sending random DM:", error);
