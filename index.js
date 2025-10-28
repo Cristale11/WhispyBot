@@ -194,7 +194,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (validMembers.size === 0) {
         return interaction.editReply({
-          content: "❌ No valid users found in this server.",
+          content: "No valid users found in this server.",
         });
       }
 
@@ -220,13 +220,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
           console.log(
             `[RANDOMDM] Intento ${attempts}: DMs desactivados - reintentando`
           );
-          // Opcional: remover este miembro de validMembers para no repetirlo
-          validMembers.delete(randomMember.id);
 
           if (validMembers.size === 0) {
             return interaction.editReply({
               content:
-                "❌ No users with DMs enabled found after checking all members.",
+                "No users with DMs enabled found after checking all members.",
             });
           }
           continue;
@@ -235,7 +233,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       if (!targetUser) {
         return interaction.editReply({
-          content: `❌ Could not find a user with DMs enabled after ${MAX_ATTEMPTS} attempts.`,
+          content: `Could not find a user with DMs enabled after ${MAX_ATTEMPTS} attempts.`,
         });
       }
 
@@ -251,7 +249,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           updateCurrentMessageId,
         } = require("./utils/conversation-history");
 
-        const embed = createAnonymousDMEmbed(message, conversationId);
+        const embed = createAnonymousDMEmbed(message, conversationId, null, null, true);
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId("reply_anonymous_dm")

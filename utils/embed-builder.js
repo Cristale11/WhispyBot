@@ -21,21 +21,36 @@ function createAnonymousMessageEmbed(message) {
  * @param {string} userId - ID del usuario (para asignar color)
  * @returns {EmbedBuilder}
  */
-function createAnonymousDMEmbed(message, conversationId, currentIndex = null, totalMessages = null) {
+function createAnonymousDMEmbed(
+  message,
+  conversationId,
+  currentIndex = null,
+  totalMessages = null,
+  isRandom = false
+) {
   const color = getColorForConversation(conversationId);
 
   let description = message;
 
   // Agregar contador si se proporciona
   if (currentIndex !== null && totalMessages !== null && totalMessages > 1) {
-    description = `📊 Message ${currentIndex + 1} of ${totalMessages}\n\n${message}`;
+    description = `📊 Message ${
+      currentIndex + 1
+    } of ${totalMessages}\n\n${message}`;
   }
+
+  const title = isRandom
+    ? "Random Anonymous Message:"
+    : "Anonymous Direct Message:";
+  const footerText = isRandom
+    ? "Someone random from the server sent you an anonymous message"
+    : "Someone sent you an anonymous message";
 
   return new EmbedBuilder()
     .setColor(color)
-    .setTitle("Anonymous Direct Message:")
+    .setTitle(title)
     .setDescription(message)
-    .setFooter({ text: "Someone sent you an anonymous message" })
+    .setFooter({ text: footerText })
     .setTimestamp();
 }
 
@@ -47,7 +62,14 @@ function createAnonymousDMEmbed(message, conversationId, currentIndex = null, to
  * @param {boolean} isDM - Si es respuesta a DM
  * @returns {EmbedBuilder}
  */
-function createReplyEmbed(originalMessage, replyMessage, conversationId, isDM = false, currentIndex = null, totalMessages = null) {
+function createReplyEmbed(
+  originalMessage,
+  replyMessage,
+  conversationId,
+  isDM = false,
+  currentIndex = null,
+  totalMessages = null
+) {
   const color = getColorForConversation(conversationId);
   const footerText = isDM
     ? "Someone replied anonymously to your message"
@@ -68,12 +90,12 @@ function createReplyEmbed(originalMessage, replyMessage, conversationId, isDM = 
     })
     .setFooter({ text: footerText })
     .setTimestamp();
-  
+
   // Agregar contador si se proporciona
   if (currentIndex !== null && totalMessages !== null && totalMessages > 1) {
     embed.setDescription(`📊 Message ${currentIndex + 1} of ${totalMessages}`);
   }
-  
+
   return embed;
 }
 
